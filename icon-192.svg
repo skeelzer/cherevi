@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" fill="#0a0a0a" rx="32"/>
+  <circle cx="96" cy="80" r="52" fill="none" stroke="#c9a96e" stroke-width="6"/>
+  <rect x="44" y="76" width="104" height="10" rx="5" fill="#c9a96e"/>
+  <rect x="60" y="130" width="72" height="8" rx="4" fill="#c9a96e"/>
+  <circle cx="96" cy="56" r="8" fill="#c9a96e"/>
+  <text x="96" y="170" font-family="Georgia,serif" font-size="18" fill="#c9a96e" text-anchor="middle">Faluche</text>
+</svg>
