@@ -207,8 +207,14 @@ function filteredPool() {
 
 // ── QUIZ ──────────────────────────────────────────────────────────────────────
 async function startSession(size) {
-const top = shuffle(pool).slice(0, size);
-STATE.questions = top;
+const recentIds = new Set(STATE.lastSessionIds || []);
+const sorted = shuffle(pool).sort((a, b) => {
+  const aRecent = recentIds.has(a.id) ? 1 : 0;
+  const bRecent = recentIds.has(b.id) ? 1 : 0;
+  return aRecent - bRecent;
+});
+STATE.questions = sorted.slice(0, size);
+STATE.lastSessionIds = STATE.questions.map(q => q.id);
 }
 
 function renderQuiz(main) {
