@@ -1,10 +1,14 @@
 // ── SERVICE WORKER — Cache-first strategy for full offline support ─────────────
-const CACHE = 'faluche-v1';
+const CACHE = 'faluche-v6';
 const FILES = [
   './',
   './index.html',
   './style.css',
   './questions.js',
+  './songs.js',
+  './badges.js',
+  './config.js',
+  './sync.js',
   './db.js',
   './app.js',
   './manifest.json',

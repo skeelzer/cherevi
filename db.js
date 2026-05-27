@@ -1,6 +1,6 @@
 // ── DB.JS — IndexedDB persistence layer ──────────────────────────────────────
 const DB_NAME = 'faluche_quiz';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let _db = null;
 
@@ -10,18 +10,19 @@ function openDB() {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = e => {
       const db = e.target.result;
-      // stats per question
       if (!db.objectStoreNames.contains('qstats')) {
         db.createObjectStore('qstats', { keyPath: 'id' });
       }
-      // session history
       if (!db.objectStoreNames.contains('sessions')) {
         const ss = db.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true });
         ss.createIndex('ts', 'ts');
       }
-      // settings
       if (!db.objectStoreNames.contains('settings')) {
         db.createObjectStore('settings', { keyPath: 'key' });
+      }
+      // v2: user-defined songs
+      if (!db.objectStoreNames.contains('songs_data')) {
+        db.createObjectStore('songs_data', { keyPath: 'id' });
       }
     };
     req.onsuccess = e => { _db = e.target.result; resolve(_db); };
@@ -104,6 +105,70 @@ async function clearSessions() {
   });
 }
 
+// ── Songs CRUD ────────────────────────────────────────────────────────────────
+// Songs are stored in their own object store: { id, title, level, addedAt }
+
+async function getAllSongs() {
+  await openDB();
+  // Migrate: ensure 'songs' store exists (added in v2 if needed)
+  return new Promise(resolve => {
+    const songs = [];
+    try {
+      const req = tx('songs_data').openCursor();
+      req.onsuccess = e => {
+        const cur = e.target.result;
+        if (cur) { songs.push(cur.value); cur.continue(); }
+        else resolve(songs.sort((a,b) => a.title.localeCompare(b.title, 'fr')));
+      };
+      req.onerror = () => resolve([]);
+    } catch(e) { resolve([]); }
+  });
+}
+
+async function addSong(title) {
+  await openDB();
+  const id = 'song_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  const song = { id, title: title.trim(), level: 0, addedAt: Date.now() };
+  return new Promise(resolve => {
+    tx('songs_data', 'readwrite').add(song).onsuccess = () => resolve(song);
+  });
+}
+
+async function updateSongLevel(id, level) {
+  await openDB();
+  return new Promise(resolve => {
+    const store = tx('songs_data', 'readwrite');
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const song = req.result;
+      if (!song) return resolve();
+      song.level = level;
+      store.put(song).onsuccess = () => resolve();
+    };
+  });
+}
+
+async function updateSongTitle(id, title) {
+  await openDB();
+  return new Promise(resolve => {
+    const store = tx('songs_data', 'readwrite');
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const song = req.result;
+      if (!song) return resolve();
+      song.title = title.trim();
+      store.put(song).onsuccess = () => resolve();
+    };
+  });
+}
+
+async function deleteSong(id) {
+  await openDB();
+  return new Promise(resolve => {
+    tx('songs_data', 'readwrite').delete(id).onsuccess = () => resolve();
+  });
+}
+
 // ── Settings ──────────────────────────────────────────────────────────────────
 async function getSetting(key, def) {
   await openDB();
@@ -117,5 +182,27 @@ async function setSetting(key, value) {
   await openDB();
   return new Promise(resolve => {
     tx('settings', 'readwrite').put({ key, value }).onsuccess = () => resolve();
+  });
+}
+
+// ── Extra DB functions needed by sync ─────────────────────────────────────────
+async function clearAllSongs() {
+  await openDB();
+  return new Promise(resolve => {
+    tx('songs_data', 'readwrite').clear().onsuccess = () => resolve();
+  });
+}
+
+async function putSong(song) {
+  await openDB();
+  return new Promise(resolve => {
+    tx('songs_data', 'readwrite').put(song).onsuccess = () => resolve();
+  });
+}
+
+async function putQStat(stat) {
+  await openDB();
+  return new Promise(resolve => {
+    tx('qstats', 'readwrite').put(stat).onsuccess = () => resolve();
   });
 }
