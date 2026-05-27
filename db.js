@@ -1,273 +1,144 @@
-// ── DB.JS — IndexedDB persistence layer ──────────────────────────────────────
-const DB_NAME = 'faluche_quiz';
-const DB_VERSION = 3;
+// ── BADGES.JS — Images réelles depuis faluche.info ───────────────────────────
+const BASE = 'https://faluche.info/wp-content/uploads/2020/01/';
 
-let _db = null;
+const BADGE_SVG = {
+  // Circulaires
+  caducee_medecine:   '<img src="' + BASE + 'insigne-medecine.jpg">',
+  caducee_mercure:    '<img src="' + BASE + 'insigne-caducee-commerce.jpg">',
+  caducee_pharmacie:  '<img src="' + BASE + 'caducee-pharmacie-1.jpg">',
+  glaive_balance:     '<img src="' + BASE + 'insigne-balance.jpg">',
+  ankh:               '<img src="' + BASE + 'insigne-croix-de-hank.jpg">',
+  molaire:            '<img src="' + BASE + 'insigne-molaire.jpg">',
+  etoile_foudre:      '<img src="' + BASE + 'insigne-etoile-et-foudre.jpg">',
+  tete_de_mort:       '<img src="' + BASE + 'insigne-tete-mort-croise-femurs.jpg">',
+  spheroide:          '<img src="' + BASE + 'insigne-sphynx.jpg">',
+  tete_cheval:        '<img src="' + BASE + 'insigne-tete-de-cheval.jpg">',
+  parapluie:          '<img src="badges/parapluie_perso.jpg">',
+  coq:                '<img src="' + BASE + 'insigne-coq.jpg">',
+  casque_pericles:    '<img src="' + BASE + 'insigne-pericles.jpg">',
+  livre_plume:        '<img src="' + BASE + 'insigne-livre-ouvert-plume.jpg">',
+  lyre:               '<img src="' + BASE + 'insigne-lyre.jpg">',
+  grappe_raisin:      '<img src="' + BASE + 'insigne-grappe-raisin.jpg">',
+  palette_pinceau:    '<img src="' + BASE + 'insigne-pallette.jpg">',
+  equerre_compas:     '<img src="' + BASE + 'insigne-equerre-et-compas.jpg">',
+  masque_comedie:     '<img src="' + BASE + 'insigne-masque.jpg">',
+  grenouille:         '<img src="' + BASE + 'insigne-grenouille.jpg">',
+  ciseaux:            '<img src="' + BASE + 'insigne-cisseau.jpg">',
+  infirmier:          '<img src="' + BASE + 'insigne-infirmier.jpg">',
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    if (_db) return resolve(_db);
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains('qstats')) {
-        db.createObjectStore('qstats', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('sessions')) {
-        const ss = db.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true });
-        ss.createIndex('ts', 'ts');
-      }
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings', { keyPath: 'key' });
-      }
-      // v2: user-defined songs
-      if (!db.objectStoreNames.contains('songs_data')) {
-        db.createObjectStore('songs_data', { keyPath: 'id' });
-      }
-      // v3: custom user questions
-      if (!db.objectStoreNames.contains('custom_questions')) {
-        db.createObjectStore('custom_questions', { keyPath: 'id' });
-      }
-    };
-    req.onsuccess = e => { _db = e.target.result; resolve(_db); };
-    req.onerror = () => reject(req.error);
-  });
-}
+  // Cursus
+  etoile_or:          '<img src="' + BASE + 'insigne-etoile-or-B.jpg">',
+  etoile_argent:      '<img src="' + BASE + 'insigne-etoile-argent-B.jpg">',
+  palme_major:        '<img src="' + BASE + 'insigne-palme-major.jpg">',
+  palme_diplome:      '<img src="' + BASE + 'insigne-palme-diplome.jpg">',
+  palme_sciences:     '<img src="' + BASE + 'insigne-palme-des-sciences.jpg">',
+  tete_vache:         '<img src="' + BASE + 'insigne-tete-vache.jpg">',
+  tete_mort_simple:   '<img src="' + BASE + 'insigne-tete-de-mort.jpg">',
+  quille:             '<img src="' + BASE + 'insigne-quille.jpg">',
 
-function tx(store, mode = 'readonly') {
-  return _db.transaction(store, mode).objectStore(store);
-}
+  // Insignes personnels
+  chameau:            '<img src="' + BASE + 'chameau1.jpg">',
+  cochon:             '<img src="' + BASE + 'cochon2.jpg">',
+  pendu:              '<img src="' + BASE + 'insigne-pendue.jpg">',
+  feuille_vigne:      '<img src="' + BASE + 'insigne-feuille-de-vigne.jpg">',
+  epi_ble:            '<img src="' + BASE + 'insigne-epi-de-ble.jpg">',
+  fer_cheval:         '<img src="' + BASE + 'insigne-fer-a-cheval.jpg">',
+  fourchette:         '<img src="' + BASE + 'insigne-fourchette.jpg">',
+  plume:              '<img src="' + BASE + 'insigne-plume.jpg">',
+  nounours:           '<img src="' + BASE + 'insigne-nounours.jpg">',
+  sphinx:             '<img src="' + BASE + 'insigne-sphynx.jpg">',
+  abeille:            '<img src="badges/abeille.jpg">',
 
-// ── Question stats ────────────────────────────────────────────────────────────
-async function getQStats(id) {
-  await openDB();
-  return new Promise(resolve => {
-    const req = tx('qstats').get(id);
-    req.onsuccess = () => resolve(req.result || { id, correct: 0, partial: 0, wrong: 0, seen: 0, lastSeen: null });
-  });
-}
+  // Insignes partenaire
+  epee:               '<img src="' + BASE + 'insigne-epee.jpg">',
+  fleche:             '<img src="' + BASE + 'insigne-fleche.jpg">',
+  lime:               '<img src="' + BASE + 'insigne-lime.jpg">',
 
-async function getAllQStats() {
-  await openDB();
-  return new Promise(resolve => {
-    const all = {};
-    const req = tx('qstats').openCursor();
-    req.onsuccess = e => {
-      const cur = e.target.result;
-      if (cur) { all[cur.value.id] = cur.value; cur.continue(); }
-      else resolve(all);
-    };
-  });
-}
+  // Insignes GM
+  bacchus:            '<img src="badges/bacchus_perso.jpg">',
+  bouteille_bordeaux: '<img src="' + BASE + 'insigne-bouteille.jpg">',
+  bouteille_champagne:'<img src="' + BASE + 'insigne-bouteille-champagne.jpg">',
+  cle_sol:            '<img src="' + BASE + 'insigne-cle-de-sol-B.jpg">',
+  cor_chasse:         '<img src="badges/cor_de_chasse.jpg">',
+  mammouth:           '<img src="' + BASE + 'insigne-mammouth.gif">',
+  pachyderme:         '<img src="' + BASE + 'insigne-pachyderme.gif">',
+  poule:              '<img src="' + BASE + 'insigne-poule-1.jpg">',
+  singe:              '<img src="' + BASE + 'insigne-singe-1.jpg">',
+  hache:              '<img src="' + BASE + 'insigne-hache.jpg">',
+  tortue:             '<img src="badges/tortue.jpg">',
+  volant:             '<img src="badges/volant.jpg">',
+  parapluie_ouvert:   '<img src="badges/parapluie_perso.jpg">',
+  sou_troue:          '<img src="badges/sou_troue.jpg">',
+  faux:               '<img src="' + BASE + 'insigne-faux.jpg">',
+};
 
-async function updateQStat(id, result) {
-  await openDB();
-  const stat = await getQStats(id);
-  stat[result] = (stat[result] || 0) + 1;
-  stat.seen = (stat.seen || 0) + 1;
-  stat.lastSeen = Date.now();
-  return new Promise(resolve => {
-    const req = tx('qstats', 'readwrite').put(stat);
-    req.onsuccess = () => resolve();
-  });
-}
-
-async function resetAllStats() {
-  await openDB();
-  return new Promise(resolve => {
-    const req = tx('qstats', 'readwrite').clear();
-    req.onsuccess = () => resolve();
-  });
-}
-
-// ── Sessions ──────────────────────────────────────────────────────────────────
-async function saveSession(session) {
-  await openDB();
-  return new Promise(resolve => {
-    const req = tx('sessions', 'readwrite').add(session);
-    req.onsuccess = () => resolve(req.result);
-  });
-}
-
-async function getSessions(limit = 30) {
-  await openDB();
-  return new Promise(resolve => {
-    const sessions = [];
-    const req = tx('sessions').index('ts').openCursor(null, 'prev');
-    req.onsuccess = e => {
-      const cur = e.target.result;
-      if (cur && sessions.length < limit) { sessions.push(cur.value); cur.continue(); }
-      else resolve(sessions);
-    };
-  });
-}
-
-async function clearSessions() {
-  await openDB();
-  return new Promise(resolve => {
-    tx('sessions', 'readwrite').clear().onsuccess = () => resolve();
-  });
-}
-
-// ── Songs CRUD ────────────────────────────────────────────────────────────────
-// Songs are stored in their own object store: { id, title, level, addedAt }
-
-async function getAllSongs() {
-  await openDB();
-  // Migrate: ensure 'songs' store exists (added in v2 if needed)
-  return new Promise(resolve => {
-    const songs = [];
-    try {
-      const req = tx('songs_data').openCursor();
-      req.onsuccess = e => {
-        const cur = e.target.result;
-        if (cur) { songs.push(cur.value); cur.continue(); }
-        else resolve(songs.sort((a,b) => a.title.localeCompare(b.title, 'fr')));
-      };
-      req.onerror = () => resolve([]);
-    } catch(e) { resolve([]); }
-  });
-}
-
-async function addSong(title) {
-  await openDB();
-  const id = 'song_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-  const song = { id, title: title.trim(), level: 0, addedAt: Date.now() };
-  return new Promise(resolve => {
-    tx('songs_data', 'readwrite').add(song).onsuccess = () => resolve(song);
-  });
-}
-
-async function updateSongLevel(id, level) {
-  await openDB();
-  return new Promise(resolve => {
-    const store = tx('songs_data', 'readwrite');
-    const req = store.get(id);
-    req.onsuccess = () => {
-      const song = req.result;
-      if (!song) return resolve();
-      song.level = level;
-      store.put(song).onsuccess = () => resolve();
-    };
-  });
-}
-
-async function updateSongTitle(id, title) {
-  await openDB();
-  return new Promise(resolve => {
-    const store = tx('songs_data', 'readwrite');
-    const req = store.get(id);
-    req.onsuccess = () => {
-      const song = req.result;
-      if (!song) return resolve();
-      song.title = title.trim();
-      store.put(song).onsuccess = () => resolve();
-    };
-  });
-}
-
-async function deleteSong(id) {
-  await openDB();
-  return new Promise(resolve => {
-    tx('songs_data', 'readwrite').delete(id).onsuccess = () => resolve();
-  });
-}
-
-// ── Settings ──────────────────────────────────────────────────────────────────
-async function getSetting(key, def) {
-  await openDB();
-  return new Promise(resolve => {
-    const req = tx('settings').get(key);
-    req.onsuccess = () => resolve(req.result ? req.result.value : def);
-  });
-}
-
-async function setSetting(key, value) {
-  await openDB();
-  return new Promise(resolve => {
-    tx('settings', 'readwrite').put({ key, value }).onsuccess = () => resolve();
-  });
-}
-
-// ── Extra DB functions needed by sync ─────────────────────────────────────────
-async function clearAllSongs() {
-  await openDB();
-  return new Promise(resolve => {
-    tx('songs_data', 'readwrite').clear().onsuccess = () => resolve();
-  });
-}
-
-async function putSong(song) {
-  await openDB();
-  return new Promise(resolve => {
-    tx('songs_data', 'readwrite').put(song).onsuccess = () => resolve();
-  });
-}
-
-async function putQStat(stat) {
-  await openDB();
-  return new Promise(resolve => {
-    tx('qstats', 'readwrite').put(stat).onsuccess = () => resolve();
-  });
-}
-
-// ── Custom questions CRUD ─────────────────────────────────────────────────────
-async function getAllCustomQuestions() {
-  await openDB();
-  return new Promise(resolve => {
-    const items = [];
-    try {
-      const req = tx('custom_questions').openCursor();
-      req.onsuccess = e => {
-        const cur = e.target.result;
-        if (cur) { items.push(cur.value); cur.continue(); }
-        else resolve(items);
-      };
-      req.onerror = () => resolve([]);
-    } catch(e) { resolve([]); }
-  });
-}
-
-async function addCustomQuestion(q) {
-  await openDB();
-  const id = 'cq_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-  const item = { id, ...q, createdAt: Date.now(), src: 'CUSTOM' };
-  return new Promise(resolve => {
-    tx('custom_questions', 'readwrite').add(item).onsuccess = () => resolve(item);
-  });
-}
-
-async function deleteCustomQuestion(id) {
-  await openDB();
-  return new Promise(resolve => {
-    tx('custom_questions', 'readwrite').delete(id).onsuccess = () => resolve();
-  });
-}
-
-async function updateCustomQuestion(id, fields) {
-  await openDB();
-  return new Promise(resolve => {
-    const store = tx('custom_questions', 'readwrite');
-    const req = store.get(id);
-    req.onsuccess = () => {
-      const item = req.result;
-      if (!item) return resolve();
-      Object.assign(item, fields);
-      store.put(item).onsuccess = () => resolve();
-    };
-  });
-}
-
-async function clearAllCustomQuestions() {
-  await openDB();
-  return new Promise(resolve => {
-    tx('custom_questions', 'readwrite').clear().onsuccess = () => resolve();
-  });
-}
-
-async function putCustomQuestion(q) {
-  await openDB();
-  return new Promise(resolve => {
-    tx('custom_questions', 'readwrite').put(q).onsuccess = () => resolve();
-  });
-}
+// Map question id → badge key (inchangé)
+const BADGE_MAP = {
+  'cv3': 'caducee_medecine',
+  'cv4': 'spheroide',
+  'cv8': 'chouette_bicephale',
+  'cs15':'chouette_bicephale',
+  'cv5': 'ciseaux',
+  'cv7': 'caducee_pharmacie',
+  'cv9': 'ankh',
+  'cv11':'tete_cheval',
+  'cv16':'infirmier',
+  'cv17':'caducee_mercure',
+  'cv18':'tete_de_mort',
+  'cs1': 'glaive_balance',
+  'cs2': 'etoile_foudre',
+  'cs4': 'caducee_mercure',
+  'cs5': 'livre_plume',
+  'cs7': 'lyre',
+  'cs8': 'grappe_raisin',
+  'cs9': 'palme_sciences',
+  'cs11':'parapluie',
+  'cs13':'equerre_compas',
+  'cs16':'coq',
+  'cs17':'sphinx',
+  'cs21':'casque_pericles',
+  'cs22':'grenouille',
+  'cs24':'masque_comedie',
+  'cs28':'palette_pinceau',
+  'cu1': 'etoile_or',
+  'cu2': 'etoile_argent',
+  'cu5': 'palme_diplome',
+  'cu6': 'tete_vache',
+  'cu7': 'tete_mort_simple',
+  'cu11':'quille',
+  'cu12':'abeille',
+  'ip1': 'chameau',
+  'ip2': 'chameau',
+  'ip5': 'cochon',
+  'ip7': 'pendu',
+  'ip9': 'bacchus',
+  'ip11':'epi_ble',
+  'ip13':'epi_ble',
+  'ip14':'feuille_vigne',
+  'ip17':'nounours',
+  'ip15':'sphinx',
+  'ip18':'abeille',
+  'part1':'epee',
+  'part2':'epee',
+  'gm1': 'abeille',
+  'gm3': 'bacchus',
+  'gm5': 'bouteille_bordeaux',
+  'gm7': 'bouteille_champagne',
+  'gm9': 'coq',
+  'gm11':'cor_chasse',
+  'gm15':'fourchette',
+  'gm17':'pachyderme',
+  'gm18':'parapluie_ouvert',
+  'gm19':'poule',
+  'gm21':'singe',
+  'gm23':'sou_troue',
+  'gm25':'tortue',
+  'gm26':'volant',
+  'gm27':'cle_sol',
+  'gm28':'mammouth',
+  'v1':  'faux',
+  'v4':  'grenouille',
+  'v5':  'grenouille',
+  'v6':  'tortue',
+  'v7':  'tortue',
+};

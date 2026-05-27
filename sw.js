@@ -1,5 +1,5 @@
 // ── SERVICE WORKER — Cache-first strategy for full offline support ─────────────
-const CACHE = 'faluche-v10';
+const CACHE = 'faluche-v12';
 const FILES = [
   './',
   './index.html',
@@ -8,6 +8,16 @@ const FILES = [
   './songs.js',
   './badges.js',
   './config.js',
+  './badges/chouette_bicephale.jpg',
+  './badges/cor_de_chasse.jpg',
+  './badges/globe.jpg',
+  './badges/parapluie_perso.jpg',
+  './badges/sou_troue.jpg',
+  './badges/spheroide.jpg',
+  './badges/tortue.jpg',
+  './badges/volant.jpg',
+  './badges/abeille.jpg',
+  './badges/bacchus_perso.jpg',
   './sync.js',
   './db.js',
   './app.js',
