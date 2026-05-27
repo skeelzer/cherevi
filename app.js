@@ -45,11 +45,24 @@ function getBadgeSVG(qid) {
   if (!key || !BADGE_SVG[key]) return null;
   return BADGE_SVG[key];
 }
-function renderBadgeHTML(qid, size) {
+function renderBadgeHTML(qid, context) {
   const svg = getBadgeSVG(qid);
   if (!svg) return '';
-  const s = size || 72;
-  return '<div class="badge-img" style="width:' + s + 'px;height:' + s + 'px;margin:0.5rem auto">' + svg + '</div>';
+  // context: 'question' | 'answer' | 'result' | 'stats' | 'recit'
+  if (context === 'answer') {
+    return '<div class="answer-badge-wrap"><div class="badge-img">' + svg + '</div></div>';
+  }
+  if (context === 'result') {
+    return '<div class="badge-img">' + svg + '</div>';
+  }
+  if (context === 'stats') {
+    return '<div class="badge-img">' + svg + '</div>';
+  }
+  if (context === 'recit') {
+    return '<div class="badge-img">' + svg + '</div>';
+  }
+  // default: question context — large centered
+  return '<div class="quiz-badge-wrap"><div class="badge-img">' + svg + '</div></div>';
 }
 
 function fmt(ts) {
@@ -245,7 +258,7 @@ function renderQuiz(main) {
   html += '<div class="question-text">' + qtext + '</div>';
   // Badge dans la question seulement si ce n'est PAS un circulaire
   if (q.cat !== 'Circulaire velours' && q.cat !== 'Circulaire satin') {
-    html += renderBadgeHTML(q.id);
+    html += renderBadgeHTML(q.id, 'question');
   }
 
   if (!STATE.revealed) {
@@ -262,7 +275,7 @@ function renderQuiz(main) {
     html += '<div class="answer-box correct-answer"><div class="answer-label">Réponse attendue</div>';
     // Badge dans la réponse pour les circulaires
     if (q.cat === 'Circulaire velours' || q.cat === 'Circulaire satin') {
-      html += renderBadgeHTML(q.id, 60);
+      html += renderBadgeHTML(q.id, 'answer');
     }
     html += '<div style="color:#a0d080">' + q.a + '</div></div>';
     html += '<div class="judge-label">Corriger l\'évaluation :</div>';
@@ -345,7 +358,7 @@ function renderResults(main) {
     wrongs.forEach(h => {
       html += '<div class="wrong-item" style="border-color:' + (h.result==='partial'?'#5a4000':'#5a0000') + '">';
       html += '<div class="wrong-src">[' + h.q.src + '] ' + h.q.cat + '</div>';
-      html += renderBadgeHTML(h.q.id, 44);
+      html += renderBadgeHTML(h.q.id, 'result');
       html += '<div class="wrong-q">' + h.q.q.replace(/^\[.*?\]\s*/, '') + '</div>';
       if (h.userAnswer) html += '<div class="wrong-user">« ' + h.userAnswer + ' »</div>';
       html += '<div class="wrong-a">✓ ' + h.q.a + '</div></div>';
@@ -450,7 +463,7 @@ async function renderStats(main) {
     worst.forEach(({q,s,wrongRate}) => {
       html += '<div class="worst-item">';
       html += '<div class="worst-meta">' + q.src + ' · ' + q.cat + ' · ✗ ' + Math.round(wrongRate*100) + '% (' + s.seen + ' fois)</div>';
-      html += renderBadgeHTML(q.id, 40);
+      html += renderBadgeHTML(q.id, 'stats');
       html += '<div class="worst-q">' + q.q.replace(/^\[.*?\]\s*/,'') + '</div>';
       html += '<div class="worst-a">' + q.a + '</div></div>';
     });
@@ -714,7 +727,7 @@ function renderRecit(main) {
       html += '<div class="recit-match-card">';
       html += '<div class="badge-row"><span class="badge" style="color:' + srcColor + ';border-color:' + srcColor + '55;background:' + srcColor + '15">' + best.src + '</span>';
       html += '<span class="badge" style="color:#c9a96e;border-color:#c9a96e44;background:#c9a96e10">' + best.cat + '</span></div>';
-      html += renderBadgeHTML(best.id, 52);
+      html += renderBadgeHTML(best.id, 'recit');
       html += '<div class="recit-match-q">' + best.question + '</div>';
       html += '<div class="recit-match-a">' + best.answer + '</div></div>';
       if (result.matches.length>1) {
