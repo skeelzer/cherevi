@@ -127,15 +127,17 @@ const SYNC = {
 
   // Collect all local data into one blob
   async collectLocalData() {
-    const [qstats, sessions, songs] = await Promise.all([
+    const [qstats, sessions, songs, customQuestions] = await Promise.all([
       getAllQStats(),
       getSessions(500),
       getAllSongs(),
+      getAllCustomQuestions(),
     ]);
     return {
       qstats,
       sessions,
       songs,
+      customQuestions,
       exportedAt: Date.now(),
     };
   },
@@ -148,6 +150,11 @@ const SYNC = {
       if (blob.songs && Array.isArray(blob.songs)) {
         await clearAllSongs();
         for (const s of blob.songs) await putSong(s);
+      }
+      // Custom questions: replace local with cloud
+      if (blob.customQuestions && Array.isArray(blob.customQuestions)) {
+        await clearAllCustomQuestions();
+        for (const q of blob.customQuestions) await putCustomQuestion(q);
       }
       // qstats: merge (take max seen/correct/wrong per question)
       if (blob.qstats) {

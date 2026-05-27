@@ -201,3 +201,20 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 
 /* ── SYNC INDICATOR ──────────────────────────────────────────────────────────── */
 .sync-indicator { font-size:0.65rem; color:#555; white-space:nowrap; flex-shrink:0; padding:0 0.25rem; align-self:center; }
+
+/* ── CUSTOM QUESTIONS ────────────────────────────────────────────────────────── */
+.btn-add-question { width:100%; padding:0.75rem; background:#c9a96e15; border:2px dashed #c9a96e55; color:#c9a96e; border-radius:10px; font-family:Georgia,serif; font-size:0.95rem; cursor:pointer; margin:0.75rem 0; transition:all 0.15s; }
+.btn-add-question:active { background:#c9a96e30; }
+.add-q-form { background:#111; border:1px solid #c9a96e33; border-radius:12px; padding:1rem; margin-bottom:0.75rem; }
+.add-q-title { font-size:0.85rem; color:#c9a96e; font-weight:bold; margin-bottom:0.75rem; letter-spacing:0.03em; }
+.add-q-field { display:flex; flex-direction:column; gap:0.3rem; margin-bottom:0.6rem; }
+.add-q-field label { font-size:0.7rem; color:#555; text-transform:uppercase; letter-spacing:0.06em; }
+.add-q-input { width:100%; padding:0.65rem 0.85rem; background:#0d0d0d; border:1px solid #2a2a2a; border-radius:8px; color:#e8d5a3; font-family:Georgia,serif; font-size:0.9rem; resize:vertical; outline:none; box-sizing:border-box; }
+.add-q-input:focus { border-color:#c9a96e55; }
+.add-q-row { display:flex; gap:0.6rem; }
+.custom-q-list { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem; }
+.custom-q-item { background:#0d0d0d; border:1px solid #1f1f1f; border-radius:8px; padding:0.7rem 0.9rem; position:relative; }
+.custom-q-text { font-size:0.88rem; color:#e8d5a3; font-weight:bold; margin-bottom:0.2rem; padding-right:2rem; }
+.custom-q-ans { font-size:0.8rem; color:#80a060; margin-bottom:0.2rem; }
+.custom-q-meta { font-size:0.65rem; color:#444; text-transform:uppercase; letter-spacing:0.05em; }
+.cq-edit-btn { position:absolute; top:0.5rem; right:0.5rem; }

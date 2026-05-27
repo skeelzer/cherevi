@@ -1,6 +1,6 @@
 // ── DB.JS — IndexedDB persistence layer ──────────────────────────────────────
 const DB_NAME = 'faluche_quiz';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let _db = null;
 
@@ -23,6 +23,10 @@ function openDB() {
       // v2: user-defined songs
       if (!db.objectStoreNames.contains('songs_data')) {
         db.createObjectStore('songs_data', { keyPath: 'id' });
+      }
+      // v3: custom user questions
+      if (!db.objectStoreNames.contains('custom_questions')) {
+        db.createObjectStore('custom_questions', { keyPath: 'id' });
       }
     };
     req.onsuccess = e => { _db = e.target.result; resolve(_db); };
@@ -204,5 +208,66 @@ async function putQStat(stat) {
   await openDB();
   return new Promise(resolve => {
     tx('qstats', 'readwrite').put(stat).onsuccess = () => resolve();
+  });
+}
+
+// ── Custom questions CRUD ─────────────────────────────────────────────────────
+async function getAllCustomQuestions() {
+  await openDB();
+  return new Promise(resolve => {
+    const items = [];
+    try {
+      const req = tx('custom_questions').openCursor();
+      req.onsuccess = e => {
+        const cur = e.target.result;
+        if (cur) { items.push(cur.value); cur.continue(); }
+        else resolve(items);
+      };
+      req.onerror = () => resolve([]);
+    } catch(e) { resolve([]); }
+  });
+}
+
+async function addCustomQuestion(q) {
+  await openDB();
+  const id = 'cq_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  const item = { id, ...q, createdAt: Date.now(), src: 'CUSTOM' };
+  return new Promise(resolve => {
+    tx('custom_questions', 'readwrite').add(item).onsuccess = () => resolve(item);
+  });
+}
+
+async function deleteCustomQuestion(id) {
+  await openDB();
+  return new Promise(resolve => {
+    tx('custom_questions', 'readwrite').delete(id).onsuccess = () => resolve();
+  });
+}
+
+async function updateCustomQuestion(id, fields) {
+  await openDB();
+  return new Promise(resolve => {
+    const store = tx('custom_questions', 'readwrite');
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const item = req.result;
+      if (!item) return resolve();
+      Object.assign(item, fields);
+      store.put(item).onsuccess = () => resolve();
+    };
+  });
+}
+
+async function clearAllCustomQuestions() {
+  await openDB();
+  return new Promise(resolve => {
+    tx('custom_questions', 'readwrite').clear().onsuccess = () => resolve();
+  });
+}
+
+async function putCustomQuestion(q) {
+  await openDB();
+  return new Promise(resolve => {
+    tx('custom_questions', 'readwrite').put(q).onsuccess = () => resolve();
   });
 }

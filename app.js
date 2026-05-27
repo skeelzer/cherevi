@@ -78,6 +78,8 @@ const STATE = {
   songFilterLevel: -1, songSearch: '', songEditingId: null,
   authMode: 'login',
   recitHistory: [], recitInput: '', recitResult: null,
+  customQuestions: [],
+  showAddQuestion: false,
 };
 
 const CATS = ['ALL', ...Array.from(new Set(ALL_QUESTIONS.map(q => q.cat)))];
@@ -159,6 +161,8 @@ function renderHome(main) {
     html += '<button class="chip chip-size" data-size="' + sz + '">' + (n==='Tout'?'Tout ('+pool.length+')':n>pool.length?'Tout ('+pool.length+')':n) + '</button>';
   });
   html += '</div></div>';
+  html += '<button class="btn-add-question" id="addQBtn">✚ Ajouter une question</button>';
+  if (STATE.showAddQuestion) html += renderAddQuestionForm();
   html += '<div class="src-legend"><span><span style="color:#5a9fd4">●</span> National</span><span><span style="color:#e8a030">●</span> IPP</span><span><span style="color:#90d050">●</span> Les deux</span></div>';
   html += '</div>';
   main.innerHTML = html;
@@ -166,10 +170,15 @@ function renderHome(main) {
   $('catsel').addEventListener('change', e => { STATE.filterCat = e.target.value; render(); });
   main.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { STATE.filterMode = b.dataset.mode; render(); }));
   main.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => startSession(parseInt(b.dataset.size))));
+
+  const addQBtn = document.getElementById('addQBtn');
+  if (addQBtn) addQBtn.addEventListener('click', () => { STATE.showAddQuestion = !STATE.showAddQuestion; render(); });
+  bindAddQuestionForm(main);
 }
 
 function filteredPool() {
-  let pool = ALL_QUESTIONS;
+  const custom = (STATE.customQuestions || []).map(q => ({ ...q, _custom: true }));
+  let pool = [...ALL_QUESTIONS, ...custom];
   if (STATE.filterSrc !== 'ALL') pool = pool.filter(q => q.src === STATE.filterSrc);
   if (STATE.filterCat !== 'ALL') pool = pool.filter(q => q.cat === STATE.filterCat);
   if (STATE.filterMode === 'weak') {
@@ -186,6 +195,7 @@ function filteredPool() {
 // ── QUIZ ──────────────────────────────────────────────────────────────────────
 async function startSession(size) {
   STATE.qstats = await getAllQStats();
+  STATE.customQuestions = await getAllCustomQuestions();
   let pool = filteredPool();
   const weighted = pool.map(q => {
     const s = STATE.qstats[q.id] || { seen:0, wrong:0, correct:0 };
@@ -874,6 +884,7 @@ function renderAccount(main) {
   }
   STATE.qstats = await getAllQStats();
   STATE.sessions = await getSessions(30);
+  STATE.customQuestions = await getAllCustomQuestions();
   render();
   if (typeof SYNC !== 'undefined') {
     SYNC.startAutoSync();
@@ -886,3 +897,108 @@ function renderAccount(main) {
     renderSyncIndicator();
   }
 })();
+
+// ── ADD / MANAGE CUSTOM QUESTIONS ─────────────────────────────────────────────
+const CUSTOM_CATS = [
+  'Histoire','Règles','Circulaire velours','Circulaire satin','Cursus',
+  'Insignes perso','Insignes GM','Insignes régionaux','Velours/Rubans',
+  'Types de faluche','Potager','GM & GC','Baptême','Parrains',
+  'Honoris Causa','Grands Singes','Archivistes','Perso'
+];
+
+function renderAddQuestionForm() {
+  const editing = STATE.editingCustomQ;
+  const v = editing || { q:'', a:'', cat:'Perso', src:'NATIONAL' };
+  let html = '<div class="add-q-form" id="addQForm">';
+  html += '<div class="add-q-title">' + (editing ? '✏️ Modifier la question' : '✚ Nouvelle question') + '</div>';
+  html += '<div class="add-q-field"><label>Question</label>';
+  html += '<textarea class="add-q-input" id="aqQuestion" rows="2" placeholder="Ta question...">' + (v.q||'') + '</textarea></div>';
+  html += '<div class="add-q-field"><label>Réponse</label>';
+  html += '<textarea class="add-q-input" id="aqAnswer" rows="2" placeholder="La réponse attendue...">' + (v.a||'') + '</textarea></div>';
+  html += '<div class="add-q-row">';
+  html += '<div class="add-q-field" style="flex:1"><label>Catégorie</label><select class="sel" id="aqCat">';
+  CUSTOM_CATS.forEach(cat => {
+    html += '<option value="' + cat + '"' + (v.cat===cat?' selected':'') + '>' + cat + '</option>';
+  });
+  html += '</select></div>';
+  html += '<div class="add-q-field" style="flex:1"><label>Source</label><select class="sel" id="aqSrc">';
+  ['NATIONAL','IPP','BOTH','CUSTOM'].forEach(s => {
+    html += '<option value="' + s + '"' + (v.src===s?' selected':'') + '>' + s + '</option>';
+  });
+  html += '</select></div></div>';
+  html += '<div class="btn-row">';
+  html += '<button class="btn-primary" id="aqSaveBtn">' + (editing ? 'Enregistrer' : 'Ajouter') + '</button>';
+  html += '<button class="btn-ghost" id="aqCancelBtn">Annuler</button>';
+  if (editing) html += '<button class="btn-ghost btn-danger" id="aqDeleteBtn">🗑 Supprimer</button>';
+  html += '</div>';
+  html += '</div>';
+
+  // Custom questions list
+  const customs = STATE.customQuestions || [];
+  if (customs.length) {
+    html += '<div class="add-q-title" style="margin-top:1rem">Mes questions (' + customs.length + ')</div>';
+    html += '<div class="custom-q-list">';
+    customs.forEach(q => {
+      html += '<div class="custom-q-item" data-cqid="' + q.id + '">';
+      html += '<div class="custom-q-text">' + q.q + '</div>';
+      html += '<div class="custom-q-ans">' + q.a + '</div>';
+      html += '<div class="custom-q-meta">' + q.cat + ' · ' + q.src + '</div>';
+      html += '<button class="song-edit-btn cq-edit-btn" data-cqid="' + q.id + '">✏️</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  return html;
+}
+
+function bindAddQuestionForm(main) {
+  const saveBtn = document.getElementById('aqSaveBtn');
+  if (!saveBtn) return;
+
+  saveBtn.addEventListener('click', async () => {
+    const q = (document.getElementById('aqQuestion').value || '').trim();
+    const a = (document.getElementById('aqAnswer').value || '').trim();
+    const cat = document.getElementById('aqCat').value;
+    const src = document.getElementById('aqSrc').value;
+    if (!q || !a) { alert('Question et réponse obligatoires.'); return; }
+
+    if (STATE.editingCustomQ) {
+      await updateCustomQuestion(STATE.editingCustomQ.id, { q, a, cat, src });
+    } else {
+      await addCustomQuestion({ q, a, cat, src });
+    }
+    if (typeof SYNC !== 'undefined') SYNC.markDirty();
+    STATE.customQuestions = await getAllCustomQuestions();
+    STATE.editingCustomQ = null;
+    STATE.showAddQuestion = true;
+    render();
+  });
+
+  const cancelBtn = document.getElementById('aqCancelBtn');
+  if (cancelBtn) cancelBtn.addEventListener('click', () => {
+    STATE.editingCustomQ = null;
+    STATE.showAddQuestion = false;
+    render();
+  });
+
+  const deleteBtn = document.getElementById('aqDeleteBtn');
+  if (deleteBtn) deleteBtn.addEventListener('click', async () => {
+    if (confirm('Supprimer cette question ?')) {
+      await deleteCustomQuestion(STATE.editingCustomQ.id);
+      if (typeof SYNC !== 'undefined') SYNC.markDirty();
+      STATE.customQuestions = await getAllCustomQuestions();
+      STATE.editingCustomQ = null;
+      render();
+    }
+  });
+
+  main.querySelectorAll('.cq-edit-btn').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const id = b.dataset.cqid;
+    STATE.editingCustomQ = (STATE.customQuestions || []).find(q => q.id === id) || null;
+    STATE.showAddQuestion = true;
+    render();
+    document.getElementById('addQForm') && document.getElementById('addQForm').scrollIntoView({ behavior:'smooth' });
+  }));
+}
