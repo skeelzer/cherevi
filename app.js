@@ -243,7 +243,10 @@ function renderQuiz(main) {
   html += '<span class="badge" style="color:#c9a96e;border-color:#c9a96e44;background:#c9a96e10">' + q.cat + '</span>';
   html += '</div>';
   html += '<div class="question-text">' + qtext + '</div>';
-  html += renderBadgeHTML(q.id);
+  // Badge dans la question seulement si ce n'est PAS un circulaire
+  if (q.cat !== 'Circulaire velours' && q.cat !== 'Circulaire satin') {
+    html += renderBadgeHTML(q.id);
+  }
 
   if (!STATE.revealed) {
     html += '<textarea class="answer-input" id="answerTA" placeholder="Ta réponse... (Entrée pour valider)" rows="3">' + STATE.userInput + '</textarea>';
@@ -257,6 +260,10 @@ function renderQuiz(main) {
       html += '<div style="color:' + tc + '">' + STATE.userInput + '</div></div>';
     }
     html += '<div class="answer-box correct-answer"><div class="answer-label">Réponse attendue</div>';
+    // Badge dans la réponse pour les circulaires
+    if (q.cat === 'Circulaire velours' || q.cat === 'Circulaire satin') {
+      html += renderBadgeHTML(q.id, 60);
+    }
     html += '<div style="color:#a0d080">' + q.a + '</div></div>';
     html += '<div class="judge-label">Corriger l\'évaluation :</div>';
     html += '<div class="judge-row">';
