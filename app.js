@@ -207,30 +207,8 @@ function filteredPool() {
 
 // ── QUIZ ──────────────────────────────────────────────────────────────────────
 async function startSession(size) {
-  STATE.qstats = await getAllQStats();
-  STATE.customQuestions = await getAllCustomQuestions();
-  let pool = filteredPool();
-  const weighted = pool.map(q => {
-    const s = STATE.qstats[q.id] || { seen:0, wrong:0, correct:0 };
-    const seen = s.seen || 0;
-    const wrongRate = seen ? (s.wrong||0)/seen : 0;
-    const correctRate = seen ? (s.correct||0)/seen : 0;
-    const bias = (seen===0?0.35:0) + wrongRate*0.4 - correctRate*0.15;
-    return { q, key: Math.random() + Math.min(Math.max(bias,-0.3),0.5) };
-  });
-  weighted.sort((a,b) => b.key - a.key);
-  const top = weighted.slice(0, size).map(x => x.q);
-  for (let i = top.length-1; i > 0; i--) {
-    const j = Math.floor(Math.random()*(i+1));
-    [top[i],top[j]] = [top[j],top[i]];
-  }
-  STATE.questions = top.length ? top : shuffle(filteredPool()).slice(0, size);
-  STATE.idx = 0; STATE.revealed = false; STATE.userInput = ''; STATE.answerStatus = null;
-  STATE.sessionScore = { correct:0, partial:0, wrong:0 };
-  STATE.sessionHistory = [];
-  STATE.screen = 'quiz';
-  render();
-  setTimeout(() => { const ta = document.querySelector('textarea'); if (ta) ta.focus(); }, 100);
+const top = shuffle(pool).slice(0, size);
+STATE.questions = top;
 }
 
 function renderQuiz(main) {
