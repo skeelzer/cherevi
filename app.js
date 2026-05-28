@@ -207,6 +207,10 @@ function filteredPool() {
 
 // ── QUIZ ──────────────────────────────────────────────────────────────────────
 async function startSession(size) {
+STATE.qstats = await getALLQStats();
+STATE.customQuestions = await getALLCustomQuestions();
+const pool = filteredPoll();
+  
 const recentIds = new Set(STATE.lastSessionIds || []);
 const sorted = shuffle(pool).sort((a, b) => {
   const aRecent = recentIds.has(a.id) ? 1 : 0;
@@ -215,6 +219,16 @@ const sorted = shuffle(pool).sort((a, b) => {
 });
 STATE.questions = sorted.slice(0, size);
 STATE.lastSessionIds = STATE.questions.map(q => q.id);
+
+STAT.idx = 0; 
+STATE.revealed = false; 
+STATE.userInput = ''; 
+STATE.answerStatus = null;
+STATE.sessionScore = { correct:0, partial:0, wrong:0 };
+STATE.sessionHistory = [];
+STATE.screen = 'quiz';
+render(); 
+  setTimeout(() => { const ta = document. querySelector('textarea'); if(ta) ta.focus(); }, 100};
 }
 
 function renderQuiz(main) {
