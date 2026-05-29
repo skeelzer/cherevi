@@ -9,15 +9,14 @@ const ALL_QUESTIONS = [
 
   // ══ RÈGLES GÉNÉRALES ══
   { id:"r1", q:"[NATIONAL] Devant qui peut-on retirer sa faluche ?", a:"Uniquement devant un recteur. On ne l'enlève pas devant un professeur.", cat:"Règles", src:"NATIONAL" },
-  { id:"r2", q:"[IPP] Devant qui peut-on retirer sa faluche selon le code IPP ?", a:"Sauf s'iel a le rang de recteur·ice. On ne l'enlève pas devant un·e professeur·e.", cat:"Règles", src:"IPP" },
-  { id:"r3", q:"[NATIONAL] La faluche se réclame-t-elle d'une appartenance politique, religieuse ou syndicale ?", a:"Non, aucune appartenance politique, religieuse ou syndicale.", cat:"Règles", src:"NATIONAL" },
-  { id:"r4", q:"[IPP] De quoi la faluche ne se réclame-t-elle pas selon le code IPP (liste complète) ?", a:"D'aucune appartenance politique, religieuse, syndicale, géopolitique, science politique, adiabatique ni Stanley Cubrique.", cat:"Règles", src:"IPP" },
-  { id:"r5", q:"[IPP] Que dit l'article III-bis du code IPP ?", a:"Un tableau des prix : Tomate cerise (500g) = 2,5 €.", cat:"Règles", src:"IPP" },
-  { id:"r6", q:"[IPP] Que dit l'article XLII du code IPP ?", a:"Tout·e faluchard·e ingénieur irrespectueux·se envers ses croix sera privé·e de nouba à la pistoche. Si insuffisant, obligation de boire du rhum-tomate.", cat:"Règles", src:"IPP" },
-  { id:"r7", q:"[IPP] Comment déterminer l'orientation politique d'une croix selon l'article II-bis ?", a:"Ruban de croix porté à gauche = croix de gauche ; ruban de croix porté à droite = croix de droite.", cat:"Règles", src:"IPP" },
-  { id:"r8", q:"[IPP] Que dit le code IPP sur les adoptions IF ?", a:"Non.", cat:"Règles", src:"IPP" },
-  { id:"r9", q:"[NATIONAL] Que doit faire quelqu'un qui met une faluche ne lui appartenant pas ?", a:"Subir une épreuve choisie par le propriétaire de la faluche.", cat:"Règles", src:"NATIONAL" },
-  { id:"r10", q:"[NATIONAL] Que doit faire quelqu'un qui demande à voir l'intérieur (potager) d'une faluche ?", a:"Passer par les armes suivant les goûts des protagonistes, qui choisissent le lieu, le jour et l'heure.", cat:"Règles", src:"NATIONAL" },
+  { id:"r2", q:"[NATIONAL] La faluche se réclame-t-elle d'une appartenance politique, religieuse ou syndicale ?", a:"Non, aucune appartenance politique, religieuse ou syndicale.", cat:"Règles", src:"NATIONAL" },
+  { id:"r3", q:"[IPP] De quoi la faluche ne se réclame-t-elle pas selon le code IPP (liste complète) ?", a:"D'aucune appartenance politique, religieuse, syndicale, géopolitique, science politique, adiabatique ni Stanley Cubrique.", cat:"Règles", src:"IPP" },
+  { id:"r4", q:"[IPP] Que dit l'article III-bis du code IPP ?", a:"Un tableau des prix : Tomate cerise (500g) = 2,5 €.", cat:"Règles", src:"IPP" },
+  { id:"r5", q:"[IPP] Que dit l'article XLII du code IPP ?", a:"Tout·e faluchard·e ingénieur irrespectueux·se envers ses croix sera privé·e de nouba à la pistoche. Si insuffisant, obligation de boire du rhum-tomate.", cat:"Règles", src:"IPP" },
+  { id:"r6", q:"[IPP] Comment déterminer l'orientation politique d'une croix selon l'article II-bis ?", a:"Ruban de croix porté à gauche = croix de gauche ; ruban de croix porté à droite = croix de droite.", cat:"Règles", src:"IPP" },
+  { id:"r7", q:"[IPP] Que dit le code IPP sur les adoptions IF ?", a:"Non.", cat:"Règles", src:"IPP" },
+  { id:"r8", q:"[NATIONAL] Que doit faire quelqu'un qui met une faluche ne lui appartenant pas ?", a:"Subir une épreuve choisie par le propriétaire de la faluche.", cat:"Règles", src:"NATIONAL" },
+  { id:"r9", q:"[NATIONAL] Que doit faire quelqu'un qui demande à voir l'intérieur (potager) d'une faluche ?", a:"Passer par les armes suivant les goûts des protagonistes, qui choisissent le lieu, le jour et l'heure.", cat:"Règles", src:"NATIONAL" },
 
   // ══ STRUCTURE ══
   { id:"s1", q:"[NATIONAL/IPP] Quelles sont les deux grandes parties de la faluche ?", a:"1. Le ruban circulaire avec ses emblèmes (cursus estudiantin). 2. Le velours noir avec ses rubans et insignes.", cat:"Structure", src:"BOTH" },
@@ -73,9 +72,7 @@ const ALL_QUESTIONS = [
   { id:"cs26", q:"[NATIONAL] Circulaire complet : Écoles nationales", a:"Lettres des initiales de l'école sur Satin couleurs du pays de l'école pour Écoles nationales", cat:"Circulaire satin", src:"NATIONAL" },
   { id:"cs27", q:"[NATIONAL] Circulaire complet : DU", a:"Lettres « DU » sur Satin couleur de l'UFR de rattachement pour DU", cat:"Circulaire satin", src:"NATIONAL" },
   { id:"cs28", q:"[NATIONAL] Circulaire complet : Beaux-arts et arts plastiques", a:"Palette et pinceau sur Satin bleu pour Beaux-arts et arts plastiques", cat:"Circulaire satin", src:"NATIONAL" },
-  { id:"cs29", q:"[IPP] Quel insigne représente l'archéologie selon le code IPP ?", a:"Tête de sphinx.", cat:"Circulaire satin", src:"IPP" },
-  { id:"cs30", q:"[IPP] Quel insigne représente la kinésithérapie selon le code IPP ?", a:"Caducée de Mercure.", cat:"Circulaire satin", src:"IPP" },
-  { id:"cs31", q:"[IPP] Quelle filière le code IPP appelle MIASHS et quel insigne ?", a:"MIASHS — insigne : « MIASHS ».", cat:"Circulaire satin", src:"IPP" },
+  { id:"cs29", q:"[IPP] Quelle filière le code IPP appelle MIASHS et quel insigne ?", a:"MIASHS — insigne : « MIASHS ».", cat:"Circulaire satin", src:"IPP" },
 
   // ══ CURSUS UNIVERSITAIRE ══
   { id:"cu1", q:"[NATIONAL] Que représente une étoile dorée sur le circulaire ?", a:"Une année d'études validée (se place en début d'année).", cat:"Cursus", src:"NATIONAL" },
@@ -102,7 +99,7 @@ const ALL_QUESTIONS = [
   { id:"ip1", q:"[NATIONAL] Que signifie un chameau à l'endroit ?", a:"Célibataire.", cat:"Insignes perso", src:"NATIONAL" },
   { id:"ip2", q:"[NATIONAL] Que signifie un chameau à l'envers ?", a:"Cœur pris dans l'antichambre du mariage.", cat:"Insignes perso", src:"NATIONAL" },
   { id:"ip3", q:"[IPP] Que signifie un quadripède à bosse à l'endroit selon le code IPP ?", a:"Avoue se masturber.", cat:"Insignes perso", src:"IPP" },
-  { id:"ip4", q:"[IPP] Que signifie un quadripède à bosse à l'envers selon le code IPP ?", a:"Ne l'avoue pas.", cat:"Insignes perso", src:"IPP" },
+  { id:"ip4", q:"[IPP] Que signifie un quadripède à bosse à l'envers selon le code IPP ?", a:"Ne l'avoue pas.(se masturber)", cat:"Insignes perso", src:"IPP" },
   { id:"ip5", q:"[NATIONAL] Que signifie un cochon à l'endroit ? À l'envers ? (national)", a:"À l'endroit : n'a pas été intégré. À l'envers : a été intégré.", cat:"Insignes perso", src:"NATIONAL" },
   { id:"ip6", q:"[IPP] Que signifie un cochon selon le code IPP ?", a:"Gros porc.", cat:"Insignes perso", src:"IPP" },
   { id:"ip7", q:"[NATIONAL] Que signifie un pendu sur la faluche (national) ?", a:"Marié ou pacsé.", cat:"Insignes perso", src:"NATIONAL" },
