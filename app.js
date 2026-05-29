@@ -212,14 +212,12 @@ async function startSession(size) {
   const pool = filteredPool();
 
   const recentIds = new Set(STATE.lastSessionIds || []);
-  const sorted = shuffle(pool).sort((a, b) => {
-    const aRecent = recentIds.has(a.id) ? 1 : 0;
-    const bRecent = recentIds.has(b.id) ? 1 : 0;
-    return aRecent - bRecent;
-  });
-  STATE.questions = sorted.slice(0, size);
-  STATE.lastSessionIds = STATE.questions.map(q => q.id);
+  const fresh = shuffle(pool).filter(q => !recentIds.has(q.id));
+  const recent = shuffle(pool).filter(q => recentIds.has(q.id));
+  const combined = [...fresh, ...recent];
 
+  STATE.questions = combined.slice(0, size);
+  STATE.lastSessionIds = STATE.questions.map(q => q.id);
   STATE.idx = 0;
   STATE.revealed = false;
   STATE.userInput = '';
