@@ -276,5 +276,7 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .custom-q-meta { font-size:0.65rem; color:#444; text-transform:uppercase; letter-spacing:0.05em; }
 .cq-edit-btn { position:absolute; top:0.5rem; right:0.5rem; }
 
-/* ── BADGE IMAGES réelles (img depuis faluche.info) ─────────────────────────── */
+.song-detail { background:#111; border:1px solid #c9a96e33; border-radius:12px; padding:1rem; margin-bottom:0.75rem; }
+.song-detail-title { font-size:1rem; color:#c9a96e; font-weight:bold; margin-bottom:0.75rem; display:flex; justify-content:space-between; align-items:center; }
+.song-detail-title button { background:transparent; border:none; color:#555; font-size:1.1rem; cursor:pointer; padding:0.2rem 0.4rem; }
 
