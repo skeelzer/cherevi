@@ -282,8 +282,24 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .song-detail-title button { background: transparent; border: none; color: #555; font-size: 1.1rem; cursor: pointer; padding: 0.2rem 0.4rem;}
 .song-detail-lyrics { flex: 1; display: flex; flex-direction: column; min-height: 0;  margin-bottom: 0.5rem;}
 .song-detail-lyrics label { font-size: 0.7rem; color: #555; text-transform: uppercase;  letter-spacing: 0.06em; margin-bottom: 0.3rem; flex-shrink: 0;}
-.song-detail-lyrics textarea { flex:1; resize:none; min-height:0; height:100%; width:100%; }
-.song-detail-notes { flex-shrink: 0; margin-bottom: 0.5rem;}
+.song-detail-lyrics textarea {
+  flex: 1;
+  resize: none;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+}
+.song-detail-notes {
+  flex-shrink: 0;
+  margin-bottom: 0.5rem;
+  flex-basis: 25%;
+  display: flex;
+  flex-direction: column;
+}
+.song-detail-notes textarea {
+  flex: 1;
+  resize: none;
+}
 .song-detail-notes label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; display: block;}
 .song-detail-actions { flex-shrink: 0; display: flex; gap: 0.6rem;}
 .song-detail-actions .btn-primary,
