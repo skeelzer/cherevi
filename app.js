@@ -480,7 +480,40 @@ async function renderSongs(main) {
   const filterLevel = STATE.songFilterLevel !== undefined ? STATE.songFilterLevel : -1;
   const search = (STATE.songSearch || '').toLowerCase();
   const editingId = STATE.songEditingId || null;
+  const openId = STATE.songOpenId || null;
 
+  // ── Vue détail d'un chant ──────────────────────────────────────────────────
+  if (openId) {
+    const opened = songs.find(s => s.id === openId);
+    if (opened) {
+      let html = '<div class="songs-wrap">';
+      html += '<div class="song-detail">';
+      html += '<div class="song-detail-title"><span>' + opened.title + '</span><button id="closeDetail">✕</button></div>';
+      html += '<div class="add-q-field"><label>Paroles</label>';
+      html += '<textarea class="add-q-input" id="songLyrics" rows="10" placeholder="Paroles...">' + (opened.lyrics || '') + '</textarea></div>';
+      html += '<div class="add-q-field"><label>Notes</label>';
+      html += '<textarea class="add-q-input" id="songNotes" rows="5" placeholder="Notes, astuces, mémo...">' + (opened.notes || '') + '</textarea></div>';
+      html += '<div class="btn-row"><button class="btn-primary" id="saveSongDetail">Enregistrer</button>';
+      html += '<button class="btn-ghost" id="cancelDetail">Annuler</button></div>';
+      html += '</div></div>';
+      main.innerHTML = html;
+
+      $('closeDetail').addEventListener('click', () => { STATE.songOpenId = null; renderSongs(main); });
+      $('cancelDetail').addEventListener('click', () => { STATE.songOpenId = null; renderSongs(main); });
+      $('saveSongDetail').addEventListener('click', async () => {
+        await updateSongFields(openId, {
+          lyrics: $('songLyrics').value,
+          notes:  $('songNotes').value,
+        });
+        if (typeof SYNC !== 'undefined') SYNC.markDirty();
+        STATE.songOpenId = null;
+        renderSongs(main);
+      });
+      return;
+    }
+  }
+
+  // ── Vue liste ─────────────────────────────────────────────────────────────
   let pool = songs;
   if (filterLevel >= 0) pool = pool.filter(s => s.level === filterLevel);
   if (search) pool = pool.filter(s => s.title.toLowerCase().includes(search));
@@ -533,12 +566,13 @@ async function renderSongs(main) {
     pool.forEach(s => {
       const L = LEVELS[s.level];
       const isEditing = editingId === s.id;
+      const hasContent = s.lyrics || s.notes;
       html += '<div class="song-item" data-sid="' + s.id + '">';
       html += '<div class="song-left">';
       if (isEditing) {
         html += '<input class="song-edit-input" id="editInput_' + s.id + '" value="' + s.title.replace(/"/g,'&quot;') + '" autocomplete="off"/>';
       } else {
-        html += '<div class="song-title">' + s.title + '</div>';
+        html += '<div class="song-title song-title-open" data-open="' + s.id + '" style="cursor:pointer">' + s.title + (hasContent ? ' <span style="color:#c9a96e;font-size:0.65rem">●</span>' : '') + '</div>';
       }
       html += '</div><div class="song-right">';
       if (isEditing) {
@@ -580,6 +614,14 @@ async function renderSongs(main) {
   if ($('songSearch')) $('songSearch').addEventListener('input', e => { STATE.songSearch=e.target.value; renderSongs(main); });
   main.querySelectorAll('[data-slvl]').forEach(b => b.addEventListener('click', () => { STATE.songFilterLevel=parseInt(b.dataset.slvl); renderSongs(main); }));
 
+  // Ouvrir le détail au clic sur le titre
+  main.querySelectorAll('.song-title-open').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    STATE.songOpenId = b.dataset.open;
+    STATE.songEditingId = null;
+    renderSongs(main);
+  }));
+
   main.querySelectorAll('.lvl-dot').forEach(b => b.addEventListener('click', async e => {
     e.stopPropagation();
     await updateSongLevel(b.dataset.sid, parseInt(b.dataset.lvl));
@@ -590,6 +632,7 @@ async function renderSongs(main) {
   main.querySelectorAll('.song-edit-btn').forEach(b => b.addEventListener('click', e => {
     e.stopPropagation();
     STATE.songEditingId = b.dataset.sid;
+    STATE.songOpenId = null;
     renderSongs(main);
     const inp = $('editInput_' + b.dataset.sid);
     if (inp) { inp.focus(); inp.select(); }
