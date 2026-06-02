@@ -11,7 +11,7 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .nav-btn.active { border-color:#c9a96e; color:#c9a96e; background:#c9a96e15; }
 
 /* ── MAIN SCROLL AREA ───────────────────────────────────────────────────────── */
-.main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; }
 
 /* ── HOME ───────────────────────────────────────────────────────────────────── */
 .home-wrap { padding:1rem; max-width:560px; margin:0 auto; }
@@ -111,8 +111,7 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 
 /* ── SONGS ───────────────────────────────────────────────────────────────────── */
 .songs-wrap { padding:1rem; max-width:560px; margin:0 auto; padding-bottom:2rem; }
-.songs-wrap.detail-mode { padding:0.75rem; max-width:100%; height:100%; display:flex; flex-direction:column; }.songs-stats-row { display:flex; gap:0.4rem; margin-bottom:0.6rem; }
-.songs-stat { flex:1; background:#111; border:1px solid #1f1f1f; border-radius:10px; padding:0.6rem 0.3rem; text-align:center; }
+.songs-wrap.detail-mode { padding:0.75rem; max-width:100%; flex:1; display:flex; flex-direction:column; }.songs-stat { flex:1; background:#111; border:1px solid #1f1f1f; border-radius:10px; padding:0.6rem 0.3rem; text-align:center; }
 .songs-stat-n { font-size:1.2rem; font-weight:bold; }
 .songs-stat-l { font-size:0.58rem; color:#555; margin-top:0.1rem; }
 .songs-prog-bg { position:relative; height:6px; background:#1a1a1a; border-radius:4px; overflow:hidden; margin-bottom:0.9rem; }
@@ -278,74 +277,16 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 
 /* ── SONG DETAIL ─────────────────────────────────────────────────────────────── */
 .songs-wrap.detail-mode { padding:0.75rem; max-width:100%; height:100%; display:flex; flex-direction:column; }
-.song-detail {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  background: #111;
-  border: 1px solid #c9a96e33;
-  border-radius: 12px;
-  padding: 1rem;
-  overflow: hidden;
-}
-.song-detail-title {
-  font-size: 1rem;
-  color: #c9a96e;
-  font-weight: bold;
-  margin-bottom: 0.75rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-}
-.song-detail-title button {
-  background: transparent;
-  border: none;
-  color: #555;
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-}
-.song-detail-lyrics {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  margin-bottom: 0.5rem;
-}
-.song-detail-lyrics label {
-  font-size: 0.7rem;
-  color: #555;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.3rem;
-  flex-shrink: 0;
-}
-.song-detail-lyrics textarea {
-  flex: 1;
-  resize: none;
-  min-height: 0;
-}
-.song-detail-notes {
-  flex-shrink: 0;
-  margin-bottom: 0.5rem;
-}
-.song-detail-notes label {
-  font-size: 0.7rem;
-  color: #555;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.3rem;
-  display: block;
-}
-.song-detail-actions {
-  flex-shrink: 0;
-  display: flex;
-  gap: 0.6rem;
-}
+.song-detail { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #111; border: 1px solid #c9a96e33; border-radius: 12px; padding: 1rem; overflow: hidden;}
+.song-detail-title { font-size: 1rem; color: #c9a96e; font-weight: bold; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
+.song-detail-title button { background: transparent; border: none; color: #555; font-size: 1.1rem; cursor: pointer; padding: 0.2rem 0.4rem;}
+.song-detail-lyrics { flex: 1; display: flex; flex-direction: column; min-height: 0;  margin-bottom: 0.5rem;}
+.song-detail-lyrics label { font-size: 0.7rem; color: #555; text-transform: uppercase;  letter-spacing: 0.06em; margin-bottom: 0.3rem; flex-shrink: 0;}
+.song-detail-lyrics textarea { flex:1; resize:none; min-height:0; height:100%; width:100%; }
+.song-detail-notes { flex-shrink: 0; margin-bottom: 0.5rem;}
+.song-detail-notes label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; display: block;}
+.song-detail-actions { flex-shrink: 0; display: flex; gap: 0.6rem;}
 .song-detail-actions .btn-primary,
-.song-detail-actions .btn-ghost {
-  flex: 1;
+.song-detail-actions .btn-ghost { flex: 1;
   margin: 0;
 }
