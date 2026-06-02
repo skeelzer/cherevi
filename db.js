@@ -166,6 +166,20 @@ async function updateSongTitle(id, title) {
   });
 }
 
+async function updateSongFields(id, fields) {
+  await openDB();
+  return new Promise(resolve => {
+    const store = tx('songs_data', 'readwrite');
+    const req = store.get(id);
+    req.onsuccess = () => {
+      const song = req.result;
+      if (!song) return resolve();
+      Object.assign(song, fields);
+      store.put(song).onsuccess = () => resolve();
+    };
+  });
+}
+
 async function deleteSong(id) {
   await openDB();
   return new Promise(resolve => {
@@ -272,4 +286,3 @@ async function putCustomQuestion(q) {
   });
 }
 
-async function updateSongFields(id, fields) { ... }
