@@ -612,17 +612,25 @@ async function renderSongs(main) {
   if ($('songSearch')) $('songSearch').addEventListener('input', e => { STATE.songSearch=e.target.value; renderSongs(main); });
   main.querySelectorAll('[data-slvl]').forEach(b => b.addEventListener('click', () => { STATE.songFilterLevel=parseInt(b.dataset.slvl); renderSongs(main); }));
 
-  main.querySelectorAll('.song-title-open').forEach(b => {
-    const open = e => {
+main.querySelectorAll('.song-title-open').forEach(b => {
+    let startY = 0;
+    b.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+    b.addEventListener('touchend', e => {
+      if (Math.abs(e.changedTouches[0].clientY - startY) > 10) return; // scroll, on ignore
       if (STATE.songEditingId) return;
       e.stopPropagation();
       e.preventDefault();
       STATE.songOpenId = b.dataset.open;
       STATE.songEditingId = null;
       renderSongs(main);
-    };
-    b.addEventListener('click', open);
-    b.addEventListener('touchend', open);
+    });
+    b.addEventListener('click', e => {
+      if (STATE.songEditingId) return;
+      e.stopPropagation();
+      STATE.songOpenId = b.dataset.open;
+      STATE.songEditingId = null;
+      renderSongs(main);
+    });
   });
 
   main.querySelectorAll('.lvl-dot').forEach(b => b.addEventListener('click', async e => {
