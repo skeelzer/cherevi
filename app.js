@@ -88,7 +88,7 @@ const STATE = {
   sessionHistory: [],
   qstats: {}, sessions: [],
   filterSrc: 'ALL', filterCat: 'ALL', filterMode: 'normal',
-  songFilterLevel: -1, songSearch: '', songEditingId: null,
+  songFilterLevel: -1, songSearch: '', songEditingId: null, songOpenId: null,
   authMode: 'login',
   recitHistory: [], recitInput: '', recitResult: null,
   customQuestions: [],
