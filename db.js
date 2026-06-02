@@ -271,3 +271,5 @@ async function putCustomQuestion(q) {
     tx('custom_questions', 'readwrite').put(q).onsuccess = () => resolve();
   });
 }
+
+async function updateSongFields(id, fields) { ... }
