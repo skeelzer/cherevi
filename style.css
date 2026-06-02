@@ -6,15 +6,16 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 /* ── NAV ────────────────────────────────────────────────────────────────────── */
 .nav { display:flex; align-items:center; justify-content:space-between; padding:0.6rem 1rem; background:#111; border-bottom:1px solid #222; flex-shrink:0; }
 .nav-title { font-size:1rem; font-weight:bold; color:#c9a96e; }
-.nav-tabs { display:flex; gap:0.25rem; }
-.nav-btn { background:transparent; border:1px solid #333; color:#888; padding:0.3rem 0.7rem; border-radius:20px; font-family:Georgia,serif; font-size:0.78rem; cursor:pointer; transition:all 0.15s; }
+.nav-tabs { display:flex; gap:0.2rem; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.nav-tabs::-webkit-scrollbar { display:none; }
+.nav-btn { background:transparent; border:1px solid #333; color:#888; padding:0.3rem 0.7rem; border-radius:20px; font-family:Georgia,serif; font-size:0.78rem; cursor:pointer; transition:all 0.15s; white-space:nowrap; flex-shrink:0; }
 .nav-btn.active { border-color:#c9a96e; color:#c9a96e; background:#c9a96e15; }
 
-/* ── MAIN SCROLL AREA ───────────────────────────────────────────────────────── */
-.main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; }
+/* ── MAIN ───────────────────────────────────────────────────────────────────── */
+.main { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; min-height:0; }
 
 /* ── HOME ───────────────────────────────────────────────────────────────────── */
-.home-wrap { padding:1rem; max-width:560px; margin:0 auto; }
+.home-wrap { padding:1rem; max-width:560px; margin:0 auto; width:100%; }
 .home-title { font-size:1.5rem; font-weight:bold; color:#e8d5a3; text-align:center; margin-top:0.5rem; }
 .home-sub { color:#666; font-size:0.8rem; text-align:center; margin-bottom:1.25rem; }
 .card { background:#111; border:1px solid #222; border-radius:12px; padding:1rem; margin-bottom:0.9rem; }
@@ -64,7 +65,7 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .judge-btn.wrong:active { background:#f4433633; }
 
 /* ── RESULTS ────────────────────────────────────────────────────────────────── */
-.results-wrap { padding:1.25rem; max-width:560px; margin:0 auto; }
+.results-wrap { padding:1.25rem; max-width:560px; margin:0 auto; width:100%; }
 .result-emoji { font-size:2.5rem; text-align:center; margin-top:0.5rem; }
 .result-pct { font-size:3rem; font-weight:bold; text-align:center; margin:0.25rem 0; }
 .result-detail { color:#666; font-size:0.8rem; text-align:center; margin-bottom:0.5rem; }
@@ -78,7 +79,7 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .mt { margin-top:1rem; }
 
 /* ── HISTORY ────────────────────────────────────────────────────────────────── */
-.hist-wrap { padding:1rem; max-width:560px; margin:0 auto; }
+.hist-wrap { padding:1rem; max-width:560px; margin:0 auto; width:100%; }
 .hist-summary { display:flex; gap:0.5rem; margin-bottom:1rem; }
 .hist-stat { flex:1; background:#111; border:1px solid #1f1f1f; border-radius:10px; padding:0.8rem; text-align:center; }
 .hist-stat-n { font-size:1.4rem; font-weight:bold; color:#c9a96e; }
@@ -91,7 +92,7 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .hist-item-right { text-align:right; font-size:0.8rem; color:#888; }
 
 /* ── STATS ──────────────────────────────────────────────────────────────────── */
-.stats-wrap { padding:1rem; max-width:560px; margin:0 auto; }
+.stats-wrap { padding:1rem; max-width:560px; margin:0 auto; width:100%; }
 .stats-overview { display:flex; gap:0.5rem; margin-bottom:0.5rem; }
 .cat-bars { display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem; }
 .cat-bar-item { background:#111; border:1px solid #1f1f1f; border-radius:8px; padding:0.7rem 0.85rem; }
@@ -109,9 +110,10 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 /* ── MISC ───────────────────────────────────────────────────────────────────── */
 .loading, .empty { padding:3rem 1rem; text-align:center; color:#444; font-size:0.9rem; line-height:1.8; }
 
-/* ── SONGS ───────────────────────────────────────────────────────────────────── */
-.songs-wrap { padding:1rem; max-width:560px; margin:0 auto; padding-bottom:2rem; }
-.songs-wrap.detail-mode { padding:0.75rem; max-width:100%; flex:1; display:flex; flex-direction:column; }.songs-stat { flex:1; background:#111; border:1px solid #1f1f1f; border-radius:10px; padding:0.6rem 0.3rem; text-align:center; }
+/* ── SONGS — liste ───────────────────────────────────────────────────────────── */
+.songs-wrap { padding:1rem; max-width:560px; margin:0 auto; width:100%; padding-bottom:2rem; }
+.songs-stats-row { display:flex; gap:0.4rem; margin-bottom:0.6rem; }
+.songs-stat { flex:1; background:#111; border:1px solid #1f1f1f; border-radius:10px; padding:0.6rem 0.3rem; text-align:center; }
 .songs-stat-n { font-size:1.2rem; font-weight:bold; }
 .songs-stat-l { font-size:0.58rem; color:#555; margin-top:0.1rem; }
 .songs-prog-bg { position:relative; height:6px; background:#1a1a1a; border-radius:4px; overflow:hidden; margin-bottom:0.9rem; }
@@ -124,7 +126,7 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .songs-list { display:flex; flex-direction:column; gap:0.35rem; }
 .songs-empty { text-align:center; padding:2.5rem 1rem; }
 .song-item { background:#111; border:1px solid #1f1f1f; border-radius:8px; padding:0.65rem 0.8rem; display:flex; justify-content:space-between; align-items:center; gap:0.5rem; min-height:52px; }
-.song-left { flex:1; min-width:0; }
+.song-left { flex:1; min-width:0; cursor:pointer; }
 .song-title { font-size:0.9rem; color:#e8d5a3; }
 .song-right { display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem; flex-shrink:0; }
 .level-dots { display:flex; gap:5px; }
@@ -140,8 +142,102 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .song-edit-cancel { background:#1a1a1a; border:1px solid #444; color:#888; border-radius:6px; padding:0.3rem 0.6rem; cursor:pointer; font-size:0.85rem; }
 .song-del-btn { background:#2a0a0a; border:1px solid #5a1010; color:#e06060; border-radius:6px; padding:0.3rem 0.5rem; cursor:pointer; font-size:0.8rem; }
 
+/* ── SONGS — vue détail ──────────────────────────────────────────────────────── */
+.songs-wrap.detail-mode {
+  padding: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 0;
+}
+.song-detail {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #111;
+  border: 1px solid #c9a96e33;
+  border-radius: 12px;
+  padding: 1rem;
+  overflow: hidden;
+}
+.song-detail-title {
+  flex-shrink: 0;
+  font-size: 1rem;
+  color: #c9a96e;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.song-detail-title button {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+.song-detail-lyrics {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
+.song-detail-lyrics label {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.3rem;
+}
+.song-detail-lyrics textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  width: 100%;
+}
+.song-detail-notes {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+  height: 22%;
+}
+.song-detail-notes label {
+  font-size: 0.7rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.3rem;
+  flex-shrink: 0;
+}
+.song-detail-notes textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  width: 100%;
+}
+.song-detail-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 0.6rem;
+}
+.song-detail-actions .btn-primary,
+.song-detail-actions .btn-ghost {
+  flex: 1;
+  margin: 0;
+}
+
 /* ── RÉCITATION ──────────────────────────────────────────────────────────────── */
-.recit-wrap { padding:1rem; max-width:560px; margin:0 auto; padding-bottom:2rem; }
+.recit-wrap { padding:1rem; max-width:560px; margin:0 auto; width:100%; padding-bottom:2rem; }
 .recit-header { text-align:center; margin-bottom:1rem; }
 .recit-title { font-size:1.3rem; font-weight:bold; color:#c9a96e; margin-bottom:0.25rem; }
 .recit-sub { font-size:0.8rem; color:#555; line-height:1.6; }
@@ -166,76 +262,19 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .recit-hist-input { font-size:0.8rem; color:#888; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-style:italic; }
 .recit-hist-verdict { font-size:0.78rem; font-weight:bold; flex-shrink:0; }
 
-/* ── NAV scrollable on small screens ────────────────────────────────────────── */
-.nav-tabs { display:flex; gap:0.2rem; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-.nav-tabs::-webkit-scrollbar { display:none; }
-.nav-btn { white-space:nowrap; flex-shrink:0; }
-
-/* ── BADGE IMAGES (SVG inline) ───────────────────────────────────────────────── */
-.badge-img {
-  flex-shrink:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#1a1a1a;
-  border:1px solid #2a2a2a;
-  border-radius:10px;
-  overflow:hidden;
-  padding:4px;
-}
-.badge-img img {
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  border-radius:6px;
-}
-
-/* Dans la question : grand cadre centré, taille fixe */
-.quiz-badge-wrap {
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  margin:0.75rem 0;
-  flex-shrink:0;
-}
-.quiz-badge-wrap .badge-img {
-  width:120px;
-  height:120px;
-}
-
-/* Dans la réponse (circulaires) */
-.answer-badge-wrap {
-  display:flex;
-  justify-content:center;
-  margin:0.5rem 0;
-}
-.answer-badge-wrap .badge-img {
-  width:90px;
-  height:90px;
-}
-
-/* Dans les erreurs résultats */
-.wrong-item .badge-img {
-  width:52px;
-  height:52px;
-  flex-shrink:0;
-}
-
-/* Dans les stats pires questions */
-.worst-item .badge-img {
-  width:44px;
-  height:44px;
-  flex-shrink:0;
-}
-
-/* Dans récitation */
-.recit-match-card .badge-img {
-  width:72px;
-  height:72px;
-}
+/* ── BADGES ──────────────────────────────────────────────────────────────────── */
+.badge-img { flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#1a1a1a; border:1px solid #2a2a2a; border-radius:10px; overflow:hidden; padding:4px; }
+.badge-img img { width:100%; height:100%; object-fit:contain; border-radius:6px; }
+.quiz-badge-wrap { display:flex; justify-content:center; align-items:center; margin:0.75rem 0; flex-shrink:0; }
+.quiz-badge-wrap .badge-img { width:120px; height:120px; }
+.answer-badge-wrap { display:flex; justify-content:center; margin:0.5rem 0; }
+.answer-badge-wrap .badge-img { width:90px; height:90px; }
+.wrong-item .badge-img { width:52px; height:52px; flex-shrink:0; }
+.worst-item .badge-img { width:44px; height:44px; flex-shrink:0; }
+.recit-match-card .badge-img { width:72px; height:72px; }
 
 /* ── ACCOUNT & AUTH ──────────────────────────────────────────────────────────── */
-.account-wrap { padding:1.25rem 1rem 2rem; max-width:480px; margin:0 auto; }
+.account-wrap { padding:1.25rem 1rem 2rem; max-width:480px; margin:0 auto; width:100%; }
 .account-avatar { font-size:3rem; text-align:center; margin:0.5rem 0 0.25rem; }
 .account-email { font-size:1.1rem; color:#c9a96e; text-align:center; margin-bottom:0.25rem; word-break:break-all; }
 .account-title { font-size:1.3rem; font-weight:bold; color:#c9a96e; text-align:center; margin-bottom:0.25rem; }
@@ -274,35 +313,3 @@ html, body { height: 100%; background: #0a0a0a; font-family: Georgia, 'Times New
 .custom-q-ans { font-size:0.8rem; color:#80a060; margin-bottom:0.2rem; }
 .custom-q-meta { font-size:0.65rem; color:#444; text-transform:uppercase; letter-spacing:0.05em; }
 .cq-edit-btn { position:absolute; top:0.5rem; right:0.5rem; }
-
-/* ── SONG DETAIL ─────────────────────────────────────────────────────────────── */
-.songs-wrap.detail-mode { padding:0.75rem; max-width:100%; height:100%; display:flex; flex-direction:column; }
-.song-detail { display: flex; flex-direction: column; flex: 1; min-height: 0; background: #111; border: 1px solid #c9a96e33; border-radius: 12px; padding: 1rem; overflow: hidden;}
-.song-detail-title { font-size: 1rem; color: #c9a96e; font-weight: bold; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
-.song-detail-title button { background: transparent; border: none; color: #555; font-size: 1.1rem; cursor: pointer; padding: 0.2rem 0.4rem;}
-.song-detail-lyrics { flex: 1; display: flex; flex-direction: column; min-height: 0;  margin-bottom: 0.5rem;}
-.song-detail-lyrics label { font-size: 0.7rem; color: #555; text-transform: uppercase;  letter-spacing: 0.06em; margin-bottom: 0.3rem; flex-shrink: 0;}
-.song-detail-lyrics textarea {
-  flex: 1;
-  resize: none;
-  min-height: 0;
-  height: 100%;
-  width: 100%;
-}
-.song-detail-notes {
-  flex-shrink: 0;
-  margin-bottom: 0.5rem;
-  flex-basis: 25%;
-  display: flex;
-  flex-direction: column;
-}
-.song-detail-notes textarea {
-  flex: 1;
-  resize: none;
-}
-.song-detail-notes label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.3rem; display: block;}
-.song-detail-actions { flex-shrink: 0; display: flex; gap: 0.6rem;}
-.song-detail-actions .btn-primary,
-.song-detail-actions .btn-ghost { flex: 1;
-  margin: 0;
-}
