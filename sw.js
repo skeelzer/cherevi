@@ -1,5 +1,5 @@
 // ── SERVICE WORKER — Cache-first strategy for full offline support ─────────────
-const CACHE = 'faluche-v18';
+const CACHE = 'faluche-v19';
 const FILES = [
   './',
   './index.html',
