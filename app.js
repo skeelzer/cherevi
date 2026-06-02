@@ -482,7 +482,6 @@ async function renderSongs(main) {
   const editingId = STATE.songEditingId || null;
   const openId = STATE.songOpenId || null;
 
-  // ── Vue détail d'un chant ──────────────────────────────────────────────────
   if (openId) {
     const opened = songs.find(s => s.id === openId);
     if (opened) {
@@ -513,7 +512,6 @@ async function renderSongs(main) {
     }
   }
 
-  // ── Vue liste ─────────────────────────────────────────────────────────────
   let pool = songs;
   if (filterLevel >= 0) pool = pool.filter(s => s.level === filterLevel);
   if (search) pool = pool.filter(s => s.title.toLowerCase().includes(search));
@@ -568,11 +566,11 @@ async function renderSongs(main) {
       const isEditing = editingId === s.id;
       const hasContent = s.lyrics || s.notes;
       html += '<div class="song-item" data-sid="' + s.id + '">';
-      html += '<div class="song-left">';
+      html += '<div class="song-left song-title-open" data-open="' + s.id + '" style="cursor:pointer;flex:1;min-width:0">';
       if (isEditing) {
         html += '<input class="song-edit-input" id="editInput_' + s.id + '" value="' + s.title.replace(/"/g,'&quot;') + '" autocomplete="off"/>';
       } else {
-        html += '<div class="song-title song-title-open" data-open="' + s.id + '" style="cursor:pointer">' + s.title + (hasContent ? ' <span style="color:#c9a96e;font-size:0.65rem">●</span>' : '') + '</div>';
+        html += '<div class="song-title">' + s.title + (hasContent ? ' <span style="color:#c9a96e;font-size:0.65rem">●</span>' : '') + '</div>';
       }
       html += '</div><div class="song-right">';
       if (isEditing) {
@@ -614,13 +612,18 @@ async function renderSongs(main) {
   if ($('songSearch')) $('songSearch').addEventListener('input', e => { STATE.songSearch=e.target.value; renderSongs(main); });
   main.querySelectorAll('[data-slvl]').forEach(b => b.addEventListener('click', () => { STATE.songFilterLevel=parseInt(b.dataset.slvl); renderSongs(main); }));
 
-  // Ouvrir le détail au clic sur le titre
-  main.querySelectorAll('.song-title-open').forEach(b => b.addEventListener('click', e => {
-    e.stopPropagation();
-    STATE.songOpenId = b.dataset.open;
-    STATE.songEditingId = null;
-    renderSongs(main);
-  }));
+  main.querySelectorAll('.song-title-open').forEach(b => {
+    const open = e => {
+      if (STATE.songEditingId) return;
+      e.stopPropagation();
+      e.preventDefault();
+      STATE.songOpenId = b.dataset.open;
+      STATE.songEditingId = null;
+      renderSongs(main);
+    };
+    b.addEventListener('click', open);
+    b.addEventListener('touchend', open);
+  });
 
   main.querySelectorAll('.lvl-dot').forEach(b => b.addEventListener('click', async e => {
     e.stopPropagation();
