@@ -1038,18 +1038,6 @@ function bindRecitCirculaire(main, type) {
   }
 }
 
-  function doRecitCheck() {
-    const input = (STATE.recitInput||'').trim();
-    if (!input) return;
-    const result = recitCheck(input);
-    STATE.recitResult = { input, result };
-    if (!STATE.recitHistory) STATE.recitHistory = [];
-    STATE.recitHistory.push({ input, result });
-    renderRecit(main);
-    const el = document.querySelector('.recit-result-box');
-    if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
-  }
-
 
 // ── ACCOUNT ───────────────────────────────────────────────────────────────────
 function renderAccount(main) {
