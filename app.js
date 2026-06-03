@@ -742,22 +742,77 @@ function recitCheck(input) {
   return { status, matches, best };
 }
 
+// ── RÉCITATION ────────────────────────────────────────────────────────────────
+
+// Données circulaires pour les camemberts
+const CIRC_VELOURS = [
+  { couleur:'#8B0000', nom:'Rouge',    filières:['Médecine'] },
+  { couleur:'#2d8b2d', nom:'Vert',     filières:['Pharmacie','Préparateurs en pharmacie'] },
+  { couleur:'#6a0dad', nom:'Violet',   filières:['Chirurgie dentaire'] },
+  { couleur:'#00416A', nom:'Bleu roy', filières:['Ostéopathie'] },
+  { couleur:'#d44d8c', nom:'Rose',     filières:['Paramédical','Infirmier','Kinésithérapie'] },
+  { couleur:'#cccccc', nom:'Blanc',    filières:['Études courtes de santé'] },
+  { couleur:'#5C3317', nom:'Marron',   filières:['Classes préparatoires santé'] },
+  { couleur:'#cc007a', nom:'Fuchsia',  filières:['Sage-Femme'] },
+  { couleur:'#800020', nom:'Bordeaux', filières:['Vétérinaire'] },
+  { couleur:'#888888', nom:'Variable', filières:['PASS (filière santé choisie)','LAS (discipline majoritaire)'] },
+];
+
+const CIRC_SATIN = [
+  { couleur:'#cccc00', nom:'Jaune',         filières:['Lettres/Langues/SHS','Géographie','Histoire','Philosophie','Psychologie','Sociologie','Histoire de l\'art et archéologie'] },
+  { couleur:'#cc0000', nom:'Rouge',          filières:['Droit'] },
+  { couleur:'#6a0dad', nom:'Violet',         filières:['Sciences'] },
+  { couleur:'#cc6600', nom:'Orange',         filières:['Sciences économiques et gestion','IAE'] },
+  { couleur:'#cccccc', nom:'Blanc',          filières:['BUT','DUT','BTS','Bachelor (RNCP)'] },
+  { couleur:'#5C3317', nom:'Marron',         filières:['Classes préparatoires'] },
+  { couleur:'#00416A', nom:'Bleu roy/noir',  filières:['Écoles d\'ingénieurs'] },
+  { couleur:'#884400', nom:'Rouge et vert',  filières:['Écoles de commerce/gestion'] },
+  { couleur:'#7acc7a', nom:'Vert clair',     filières:['AES'] },
+  { couleur:'#0044cc', nom:'Bleu',           filières:['Architecture','Arts du spectacle','Arts numériques','Beaux-arts'] },
+  { couleur:'#aaaaaa', nom:'Argenté',        filières:['Musique/Musicologie'] },
+  { couleur:'#cc7755', nom:'Saumon',         filières:['Œnologie'] },
+  { couleur:'#882244', nom:'Rouge et bleu',  filières:['Sciences politiques'] },
+  { couleur:'#ddaaaa', nom:'Blanc et rouge', filières:['Théologie'] },
+  { couleur:'#777777', nom:'Gris',           filières:['MEEF'] },
+  { couleur:'#1a6b1a', nom:'Vert foncé',     filières:['Filières sportives'] },
+  { couleur:'#888888', nom:'Variable',       filières:['IUP','Écoles nationales','Communication'] },
+];
+
 function renderRecit(main) {
-  const history = STATE.recitHistory || [];
+  const mode = STATE.recitMode || 'libre';
+
   let html = '<div class="recit-wrap">';
+  html += '<div class="recit-tabs">';
+  html += '<button class="recit-tab ' + (mode==='libre'?'active':'') + '" data-rmode="libre">Libre</button>';
+  html += '<button class="recit-tab ' + (mode==='velours'?'active':'') + '" data-rmode="velours">Circulaire Velours</button>';
+  html += '<button class="recit-tab ' + (mode==='satin'?'active':'') + '" data-rmode="satin">Circulaire Satin</button>';
+  html += '</div>';
+
+  if (mode === 'libre') {
+    html += renderRecitLibre();
+  } else if (mode === 'velours') {
+    html += renderRecitCirculaire('velours');
+  } else {
+    html += renderRecitCirculaire('satin');
+  }
+
+  html += '</div>';
+  main.innerHTML = html;
+
+  main.querySelectorAll('[data-rmode]').forEach(b => b.addEventListener('click', () => {
+    STATE.recitMode = b.dataset.rmode;
+    renderRecit(main);
+  }));
+
+  if (mode === 'libre') bindRecitLibre(main);
+  else bindRecitCirculaire(main, mode);
+}
+
+function renderRecitLibre() {
+  const history = STATE.recitHistory || [];
+  let html = '';
   html += '<div class="recit-header"><div class="recit-title">Mode Récitation</div>';
-  html += '<div class="recit-sub">Énonce n\'importe quel fait, insigne, circulaire…<br>L\'app vérifie si c\'est juste.</div></div>';
-  html += '<div class="recit-examples"><div class="recit-ex-label">Exemples :</div><div class="recit-ex-list">';
-  const examples = [
-    ['Caducée médecine sur Velours rouge pour Médecine','Circulaire médecine'],
-    ['Le chameau à l\'endroit signifie célibataire','Insigne chameau'],
-    ['La faluche a été officialisée le 20 décembre 1888','Date création'],
-    ['Une tortue décernée par un GM signifie grand hébergeur','Insigne GM'],
-  ];
-  examples.forEach(([ex, label]) => {
-    html += '<button class="recit-ex-btn" data-ex="' + ex.replace(/"/g,'&quot;') + '">' + label + '</button>';
-  });
-  html += '</div></div>';
+  html += '<div class="recit-sub">Énonce n\'importe quel fait, insigne, circulaire…</div></div>';
   html += '<div class="recit-input-area">';
   html += '<textarea class="answer-input" id="recitInput" placeholder="Énonce un fait…" rows="3">' + (STATE.recitInput||'') + '</textarea>';
   html += '<div class="btn-row"><button class="btn-primary" id="recitCheckBtn">Vérifier ✓</button><button class="btn-ghost" id="recitClearBtn">Effacer</button></div>';
@@ -780,40 +835,207 @@ function renderRecit(main) {
       html += renderBadgeHTML(best.id, 'recit');
       html += '<div class="recit-match-q">' + best.question + '</div>';
       html += '<div class="recit-match-a">' + best.answer + '</div></div>';
-      if (result.matches.length>1) {
-        html += '<details class="recit-other-matches"><summary style="color:#555;font-size:0.75rem;cursor:pointer">' + (result.matches.length-1) + ' autre(s) résultat(s)</summary>';
-        result.matches.slice(1).forEach(m => {
-          html += '<div class="recit-other-item"><div style="color:#666;font-size:0.75rem">' + m.question + '</div><div style="color:#80a060;font-size:0.8rem">' + m.answer + '</div></div>';
-        });
-        html += '</details>';
-      }
       html += '</div>';
     }
   }
 
   if (history.length) {
-    html += '<div class="section-label mt">Historique de la session (' + history.length + ')</div><div class="recit-hist-list">';
+    html += '<div class="section-label mt">Historique (' + history.length + ')</div><div class="recit-hist-list">';
     history.slice().reverse().forEach(h => {
       html += '<div class="recit-hist-item" style="border-color:' + (h.result.status==='correct'?'#2a5a2a':h.result.status==='partial'?'#4a3a00':'#3a2a00') + '">';
       html += '<div class="recit-hist-input">"' + h.input + '"</div>';
-      html += '<div class="recit-hist-verdict" style="color:' + (h.result.status==='correct'?'#4CAF50':h.result.status==='partial'?'#FF9800':'#888') + '">' + (h.result.status==='correct'?'✓ Correct':h.result.status==='partial'?'~ Partiel':'○ Proche') + '</div>';
+      html += '<div class="recit-hist-verdict" style="color:' + (h.result.status==='correct'?'#4CAF50':h.result.status==='partial'?'#FF9800':'#888') + '">' + (h.result.status==='correct'?'✓':h.result.status==='partial'?'~':'○') + '</div>';
       html += '</div>';
     });
-    html += '</div><button class="btn-ghost btn-danger mt" id="recitClearHistBtn">🗑 Effacer l\'historique</button>';
+    html += '</div><button class="btn-ghost btn-danger mt" id="recitClearHistBtn">🗑 Effacer</button>';
   }
-  html += '</div>';
-  main.innerHTML = html;
+  return html;
+}
 
-  $('recitInput').addEventListener('input', e => { STATE.recitInput=e.target.value; });
-  $('recitInput').addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); doRecitCheck(); } });
-  $('recitCheckBtn').addEventListener('click', doRecitCheck);
-  $('recitClearBtn').addEventListener('click', () => { STATE.recitInput=''; STATE.recitResult=null; renderRecit(main); });
-  if ($('recitClearHistBtn')) $('recitClearHistBtn').addEventListener('click', () => { STATE.recitHistory=[]; renderRecit(main); });
-  main.querySelectorAll('[data-ex]').forEach(b => b.addEventListener('click', () => {
-    STATE.recitInput = b.dataset.ex;
-    const ta = $('recitInput'); if (ta) ta.value = b.dataset.ex;
-    doRecitCheck();
-  }));
+function renderRecitCirculaire(type) {
+  const data = type === 'velours' ? CIRC_VELOURS : CIRC_SATIN;
+  const done = STATE['recitDone_' + type] || {};
+  const total = data.reduce((a, c) => a + c.filières.length, 0);
+  const totalDone = Object.keys(done).length;
+
+  // Build pie chart SVG
+  const cx = 100, cy = 100, r = 80;
+  let svgSlices = '';
+  let startAngle = -Math.PI / 2;
+  const allFilières = data.flatMap(c => c.filières.map(f => ({ f, couleur: c.couleur })));
+  const angleStep = (2 * Math.PI) / allFilières.length;
+
+  allFilières.forEach(({ f, couleur }) => {
+    const endAngle = startAngle + angleStep;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const lg = angleStep > Math.PI ? 1 : 0;
+    const isDone = done[f];
+    const fill = isDone ? '#1a3a1a' : couleur;
+    const stroke = isDone ? '#4CAF50' : '#0a0a0a';
+    svgSlices += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(2) + ',' + y1.toFixed(2) + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x2.toFixed(2) + ',' + y2.toFixed(2) + ' Z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.5" data-fil="' + f.replace(/'/g,'&#39;') + '"/>';
+    startAngle = endAngle;
+  });
+
+  let html = '';
+  html += '<div class="circ-progress">'+totalDone+' / '+total+' filières récitées</div>';
+  html += '<div class="circ-layout">';
+
+  // Pie
+  html += '<div class="circ-pie-wrap">';
+  html += '<svg viewBox="0 0 200 200" class="circ-pie">' + svgSlices + '</svg>';
+  html += '</div>';
+
+  // Legend + done list
+  html += '<div class="circ-legend">';
+  data.forEach(c => {
+    const remaining = c.filières.filter(f => !done[f]).length;
+    html += '<div class="circ-leg-item">';
+    html += '<span class="circ-leg-dot" style="background:' + c.couleur + '"></span>';
+    html += '<span class="circ-leg-name">' + c.nom + '</span>';
+    html += '<span class="circ-leg-count" style="color:' + (remaining===0?'#4CAF50':'#c9a96e') + '">' + remaining + '</span>';
+    html += '</div>';
+    c.filières.filter(f => done[f]).forEach(f => {
+      html += '<div class="circ-done-item">✓ ' + f + '</div>';
+    });
+  });
+  html += '</div></div>';
+
+  // Input
+  html += '<div class="recit-input-area" style="margin-top:1rem">';
+  html += '<div class="recit-sub" style="margin-bottom:0.5rem">Récite un circulaire : <em>insigne sur matière couleur pour filière</em></div>';
+  html += '<textarea class="answer-input" id="circInput" placeholder="ex: Caducée médecine sur Velours rouge pour Médecine" rows="2">' + (STATE['circInput_'+type]||'') + '</textarea>';
+  html += '<div class="btn-row"><button class="btn-primary" id="circCheckBtn">Vérifier ✓</button><button class="btn-ghost" id="circResetBtn">🗑 Reset</button></div>';
+  html += '</div>';
+
+  if (STATE['circResult_'+type]) {
+    const r = STATE['circResult_'+type];
+    html += '<div class="recit-result-box" style="border-color:' + (r.ok?'#4CAF5044':'#f4433644') + ';margin-top:0.5rem">';
+    html += '<div class="recit-verdict" style="color:' + (r.ok?'#4CAF50':'#f44336') + '">' + (r.ok?'✓ Correct !':'✗ ' + r.msg) + '</div>';
+    if (r.expected) html += '<div class="recit-hint" style="margin-top:0.4rem;color:#a0d080">Attendu : ' + r.expected + '</div>';
+    html += '</div>';
+  }
+
+  return html;
+}
+
+function bindRecitLibre(main) {
+  const ta = document.getElementById('recitInput');
+  if (ta) {
+    ta.addEventListener('input', e => { STATE.recitInput = e.target.value; });
+    ta.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); doRecitCheck(main); } });
+  }
+  const checkBtn = document.getElementById('recitCheckBtn');
+  if (checkBtn) checkBtn.addEventListener('click', () => doRecitCheck(main));
+  const clearBtn = document.getElementById('recitClearBtn');
+  if (clearBtn) clearBtn.addEventListener('click', () => { STATE.recitInput=''; STATE.recitResult=null; renderRecit(main); });
+  const histBtn = document.getElementById('recitClearHistBtn');
+  if (histBtn) histBtn.addEventListener('click', () => { STATE.recitHistory=[]; renderRecit(main); });
+}
+
+function doRecitCheck(main) {
+  const input = (STATE.recitInput||'').trim();
+  if (!input) return;
+  const result = recitCheck(input);
+  STATE.recitResult = { input, result };
+  if (!STATE.recitHistory) STATE.recitHistory = [];
+  STATE.recitHistory.push({ input, result });
+  renderRecit(main);
+}
+
+function bindRecitCirculaire(main, type) {
+  const data = type === 'velours' ? CIRC_VELOURS : CIRC_SATIN;
+
+  const checkBtn = document.getElementById('circCheckBtn');
+  if (checkBtn) checkBtn.addEventListener('click', () => {
+    const ta = document.getElementById('circInput');
+    const input = (ta ? ta.value : '').trim();
+    STATE['circInput_'+type] = input;
+    if (!input) return;
+
+    // Find matching circulaire question
+    const u = normalize(input);
+    let found = null;
+    let foundFiliere = null;
+
+    // Check against all circulaire questions
+    const circQuestions = ALL_QUESTIONS.filter(q =>
+      q.cat === 'Circulaire velours' && type === 'velours' ||
+      q.cat === 'Circulaire satin' && type === 'satin'
+    );
+
+    for (const q of circQuestions) {
+      const a = normalize(q.a);
+      // Extract filière from answer "... pour Filière"
+      const pourIdx = q.a.toLowerCase().indexOf(' pour ');
+      if (pourIdx === -1) continue;
+      const filiere = q.a.slice(pourIdx + 6).trim();
+
+      // Check if already done
+      const done = STATE['recitDone_'+type] || {};
+      if (done[filiere]) continue;
+
+      // Check answer quality
+      const score = autoCheck(input, q.a);
+      if (score === 'correct' || score === 'partial') {
+        found = q;
+        foundFiliere = filiere;
+        break;
+      }
+    }
+
+    if (found && foundFiliere) {
+      if (!STATE['recitDone_'+type]) STATE['recitDone_'+type] = {};
+      STATE['recitDone_'+type][foundFiliere] = true;
+      STATE['circResult_'+type] = { ok: true, expected: null };
+      STATE['circInput_'+type] = '';
+    } else {
+      // Find closest match to hint
+      let closest = null;
+      for (const q of circQuestions) {
+        const pourIdx = q.a.toLowerCase().indexOf(' pour ');
+        if (pourIdx === -1) continue;
+        const filiere = q.a.slice(pourIdx + 6).trim();
+        const done = STATE['recitDone_'+type] || {};
+        if (done[filiere]) continue;
+        // Check if filière name mentioned
+        if (u.includes(normalize(filiere))) {
+          closest = q.a;
+          break;
+        }
+      }
+      STATE['circResult_'+type] = {
+        ok: false,
+        msg: 'Pas reconnu comme circulaire valide',
+        expected: closest
+      };
+    }
+    renderRecit(main);
+  });
+
+  const resetBtn = document.getElementById('circResetBtn');
+  if (resetBtn) resetBtn.addEventListener('click', () => {
+    if (confirm('Remettre la progression à zéro ?')) {
+      STATE['recitDone_'+type] = {};
+      STATE['circResult_'+type] = null;
+      STATE['circInput_'+type] = '';
+      renderRecit(main);
+    }
+  });
+
+  const ta = document.getElementById('circInput');
+  if (ta) {
+    ta.addEventListener('input', e => { STATE['circInput_'+type] = e.target.value; });
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('circCheckBtn') && document.getElementById('circCheckBtn').click();
+      }
+    });
+  }
+}
 
   function doRecitCheck() {
     const input = (STATE.recitInput||'').trim();
