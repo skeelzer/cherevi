@@ -1049,7 +1049,7 @@ function bindRecitCirculaire(main, type) {
     const el = document.querySelector('.recit-result-box');
     if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
-}
+
 
 // ── ACCOUNT ───────────────────────────────────────────────────────────────────
 function renderAccount(main) {
