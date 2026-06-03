@@ -747,37 +747,37 @@ function recitCheck(input) {
 
 // Données circulaires pour les camemberts
 const CIRC_VELOURS = [
+  { couleur:'#cc007a', nom:'Fuchsia',  filières:['Sage-Femme'] },
   { couleur:'#8B0000', nom:'Rouge',    filières:['Médecine'] },
+  { couleur:'#800020', nom:'Bordeaux', filières:['Vétérinaire'] },
+  { couleur:'#cc6600', nom:'Orange',   filières:[] },
+  { couleur:'#5C3317', nom:'Marron',   filières:['Classes préparatoires santé'] },
+  { couleur:'#cccc44', nom:'Jaune',    filières:[] },
   { couleur:'#2d8b2d', nom:'Vert',     filières:['Pharmacie','Préparateurs en pharmacie'] },
-  { couleur:'#6a0dad', nom:'Violet',   filières:['Chirurgie dentaire'] },
   { couleur:'#00416A', nom:'Bleu roy', filières:['Ostéopathie'] },
+  { couleur:'#6a0dad', nom:'Violet',   filières:['Chirurgie dentaire'] },
   { couleur:'#d44d8c', nom:'Rose',     filières:['Paramédical','Infirmier','Kinésithérapie'] },
   { couleur:'#cccccc', nom:'Blanc',    filières:['Études courtes de santé'] },
-  { couleur:'#5C3317', nom:'Marron',   filières:['Classes préparatoires santé'] },
-  { couleur:'#cc007a', nom:'Fuchsia',  filières:['Sage-Femme'] },
-  { couleur:'#800020', nom:'Bordeaux', filières:['Vétérinaire'] },
-  { couleur:'#888888', nom:'Variable', filières:['PASS (filière santé choisie)','LAS (discipline majoritaire)'] },
-];
+].filter(c => c.filières.length > 0);
 
 const CIRC_SATIN = [
+  { couleur:'#cc0000', nom:'Rouge',         filières:['Droit'] },
+  { couleur:'#884400', nom:'Rouge/vert',    filières:['Écoles de commerce/gestion'] },
+  { couleur:'#882244', nom:'Rouge/bleu',    filières:['Sciences politiques'] },
+  { couleur:'#cc6600', nom:'Orange',        filières:['Sciences économiques et gestion','IAE'] },
   { couleur:'#cccc00', nom:'Jaune',         filières:['Lettres/Langues/SHS','Géographie','Histoire','Philosophie','Psychologie','Sociologie','Histoire de l\'art et archéologie'] },
-  { couleur:'#cc0000', nom:'Rouge',          filières:['Droit'] },
-  { couleur:'#6a0dad', nom:'Violet',         filières:['Sciences'] },
-  { couleur:'#cc6600', nom:'Orange',         filières:['Sciences économiques et gestion','IAE'] },
-  { couleur:'#cccccc', nom:'Blanc',          filières:['BUT','DUT','BTS','Bachelor (RNCP)'] },
-  { couleur:'#5C3317', nom:'Marron',         filières:['Classes préparatoires'] },
-  { couleur:'#00416A', nom:'Bleu roy/noir',  filières:['Écoles d\'ingénieurs'] },
-  { couleur:'#884400', nom:'Rouge et vert',  filières:['Écoles de commerce/gestion'] },
-  { couleur:'#7acc7a', nom:'Vert clair',     filières:['AES'] },
-  { couleur:'#0044cc', nom:'Bleu',           filières:['Architecture','Arts du spectacle','Arts numériques','Beaux-arts'] },
-  { couleur:'#aaaaaa', nom:'Argenté',        filières:['Musique/Musicologie'] },
-  { couleur:'#cc7755', nom:'Saumon',         filières:['Œnologie'] },
-  { couleur:'#882244', nom:'Rouge et bleu',  filières:['Sciences politiques'] },
-  { couleur:'#ddaaaa', nom:'Blanc et rouge', filières:['Théologie'] },
-  { couleur:'#777777', nom:'Gris',           filières:['MEEF'] },
-  { couleur:'#1a6b1a', nom:'Vert foncé',     filières:['Filières sportives'] },
-  { couleur:'#888888', nom:'Variable',       filières:['IUP','Écoles nationales','Communication'] },
-];
+  { couleur:'#7acc7a', nom:'Vert clair',    filières:['AES'] },
+  { couleur:'#1a6b1a', nom:'Vert foncé',   filières:['Filières sportives'] },
+  { couleur:'#0044cc', nom:'Bleu',          filières:['Architecture','Arts du spectacle','Arts numériques','Beaux-arts'] },
+  { couleur:'#00416A', nom:'Bleu roy/noir', filières:['Écoles d\'ingénieurs'] },
+  { couleur:'#6a0dad', nom:'Violet',        filières:['Sciences'] },
+  { couleur:'#cc7755', nom:'Saumon',        filières:['Œnologie'] },
+  { couleur:'#ddaaaa', nom:'Blanc/rouge',   filières:['Théologie'] },
+  { couleur:'#cccccc', nom:'Blanc',         filières:['BUT','DUT','BTS','Bachelor (RNCP)'] },
+  { couleur:'#aaaaaa', nom:'Argenté',       filières:['Musique/Musicologie'] },
+  { couleur:'#777777', nom:'Gris',          filières:['MEEF'] },
+  { couleur:'#5C3317', nom:'Marron',        filières:['Classes préparatoires'] },
+].filter(c => c.filières.length > 0);
 
 function renderRecit(main) {
   const mode = STATE.recitMode || 'libre';
@@ -859,63 +859,76 @@ function renderRecitCirculaire(type) {
   const total = data.reduce((a, c) => a + c.filières.length, 0);
   const totalDone = Object.keys(done).length;
 
-  // Build pie chart SVG
-  const cx = 100, cy = 100, r = 80;
+  // Construire les tranches — une tranche par filière non faite, groupées par couleur
+  const cx = 110, cy = 110, r = 100;
   let svgSlices = '';
   let startAngle = -Math.PI / 2;
-  const allFilières = data.flatMap(c => c.filières.map(f => ({ f, couleur: c.couleur })));
-  const angleStep = (2 * Math.PI) / allFilières.length;
 
-  allFilières.forEach(({ f, couleur }) => {
-    const endAngle = startAngle + angleStep;
-    const x1 = cx + r * Math.cos(startAngle);
-    const y1 = cy + r * Math.sin(startAngle);
-    const x2 = cx + r * Math.cos(endAngle);
-    const y2 = cy + r * Math.sin(endAngle);
-    const lg = angleStep > Math.PI ? 1 : 0;
-    const isDone = done[f];
-    const fill = isDone ? '#1a3a1a' : couleur;
-    const stroke = isDone ? '#4CAF50' : '#0a0a0a';
-    svgSlices += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(2) + ',' + y1.toFixed(2) + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x2.toFixed(2) + ',' + y2.toFixed(2) + ' Z" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.5" data-fil="' + f.replace(/'/g,'&#39;') + '"/>';
-    startAngle = endAngle;
-  });
+  // Compter les tranches restantes par couleur
+  const tranchesParCouleur = data.map(c => ({
+    ...c,
+    remaining: c.filières.filter(f => !done[f])
+  }));
+  const totalTranches = tranchesParCouleur.reduce((a, c) => a + c.remaining.length, 0);
+
+  if (totalTranches === 0) {
+    // Tout fait — cercle plein vert
+    svgSlices = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#1a5a1a" stroke="#4CAF50" stroke-width="2"/>';
+    svgSlices += '<text x="' + cx + '" y="' + (cy+8) + '" text-anchor="middle" fill="#4CAF50" font-size="18">✓</text>';
+  } else {
+    const angleStep = (2 * Math.PI) / totalTranches;
+    tranchesParCouleur.forEach(c => {
+      c.remaining.forEach(f => {
+        const endAngle = startAngle + angleStep;
+        const x1 = cx + r * Math.cos(startAngle);
+        const y1 = cy + r * Math.sin(startAngle);
+        const x2 = cx + r * Math.cos(endAngle);
+        const y2 = cy + r * Math.sin(endAngle);
+        const lg = angleStep > Math.PI ? 1 : 0;
+        svgSlices += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(1) + ',' + y1.toFixed(1) + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x2.toFixed(1) + ',' + y2.toFixed(1) + ' Z" fill="' + c.couleur + '" stroke="#0a0a0a" stroke-width="1.5"><title>' + f + '</title></path>';
+        startAngle = endAngle;
+      });
+    });
+  }
 
   let html = '';
-  html += '<div class="circ-progress">'+totalDone+' / '+total+' filières récitées</div>';
+  html += '<div class="circ-progress">' + totalDone + ' / ' + total + ' filières récitées</div>';
+
   html += '<div class="circ-layout">';
 
-  // Pie
-  html += '<div class="circ-pie-wrap">';
-  html += '<svg viewBox="0 0 200 200" class="circ-pie">' + svgSlices + '</svg>';
-  html += '</div>';
+  // Camembert — plus grand
+  html += '<svg viewBox="0 0 220 220" class="circ-pie">' + svgSlices + '</svg>';
 
-  // Legend + done list
+  // Légende compacte
   html += '<div class="circ-legend">';
-  data.forEach(c => {
-    const remaining = c.filières.filter(f => !done[f]).length;
+  tranchesParCouleur.forEach(c => {
+    const remaining = c.remaining.length;
+    const isDone = remaining === 0;
     html += '<div class="circ-leg-item">';
-    html += '<span class="circ-leg-dot" style="background:' + c.couleur + '"></span>';
-    html += '<span class="circ-leg-name">' + c.nom + '</span>';
-    html += '<span class="circ-leg-count" style="color:' + (remaining===0?'#4CAF50':'#c9a96e') + '">' + remaining + '</span>';
+    html += '<span class="circ-leg-dot" style="background:' + c.couleur + ';opacity:' + (isDone?'0.3':'1') + '"></span>';
+    html += '<span class="circ-leg-name" style="color:' + (isDone?'#444':'#aaa') + '">' + c.nom + '</span>';
+    html += '<span class="circ-leg-count" style="color:' + (isDone?'#4CAF50':'#c9a96e') + '">' + remaining + '</span>';
     html += '</div>';
+    // Filières faites sous la couleur
     c.filières.filter(f => done[f]).forEach(f => {
       html += '<div class="circ-done-item">✓ ' + f + '</div>';
     });
   });
-  html += '</div></div>';
+  html += '</div>';
+  html += '</div>'; // circ-layout
 
   // Input
-  html += '<div class="recit-input-area" style="margin-top:1rem">';
-  html += '<div class="recit-sub" style="margin-bottom:0.5rem">Récite un circulaire : <em>insigne sur matière couleur pour filière</em></div>';
+  html += '<div class="recit-input-area" style="margin-top:0.75rem">';
+  html += '<div class="recit-sub" style="margin-bottom:0.4rem;font-size:0.78rem">Format : <em>insigne sur Matière couleur pour Filière</em></div>';
   html += '<textarea class="answer-input" id="circInput" placeholder="ex: Caducée médecine sur Velours rouge pour Médecine" rows="2">' + (STATE['circInput_'+type]||'') + '</textarea>';
   html += '<div class="btn-row"><button class="btn-primary" id="circCheckBtn">Vérifier ✓</button><button class="btn-ghost" id="circResetBtn">🗑 Reset</button></div>';
   html += '</div>';
 
   if (STATE['circResult_'+type]) {
-    const r = STATE['circResult_'+type];
-    html += '<div class="recit-result-box" style="border-color:' + (r.ok?'#4CAF5044':'#f4433644') + ';margin-top:0.5rem">';
-    html += '<div class="recit-verdict" style="color:' + (r.ok?'#4CAF50':'#f44336') + '">' + (r.ok?'✓ Correct !':'✗ ' + r.msg) + '</div>';
-    if (r.expected) html += '<div class="recit-hint" style="margin-top:0.4rem;color:#a0d080">Attendu : ' + r.expected + '</div>';
+    const res = STATE['circResult_'+type];
+    html += '<div class="recit-result-box" style="border-color:' + (res.ok?'#4CAF5044':'#f4433644') + ';margin-top:0.5rem">';
+    html += '<div class="recit-verdict" style="color:' + (res.ok?'#4CAF50':'#f44336') + '">' + (res.ok?'✓ Correct !':'✗ ' + res.msg) + '</div>';
+    if (res.expected) html += '<div class="recit-hint" style="margin-top:0.4rem;color:#a0d080">Attendu : ' + res.expected + '</div>';
     html += '</div>';
   }
 
