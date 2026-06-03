@@ -93,6 +93,7 @@ const STATE = {
   recitHistory: [], recitInput: '', recitResult: null,
   customQuestions: [],
   showAddQuestion: false,
+  recitMode: 'libre',
 };
 
 const CATS = ['ALL', ...Array.from(new Set(ALL_QUESTIONS.map(q => q.cat)))];
