@@ -276,4 +276,11 @@ const ALL_QUESTIONS = [
   { id:"arch1", q:"[NATIONAL] Lors de quel anniversaire le Groupement des Archivistes a-t-il été officialisé ?", a:"Lors du 131e anniversaire.", cat:"Archivistes", src:"NATIONAL" },
   { id:"arch2", q:"[NATIONAL] Les archivistes reçoivent-ils un insigne ou un ruban ?", a:"Aucun — travail volontaire, sans glorification personnelle.", cat:"Archivistes", src:"NATIONAL" },
   { id:"arch3", q:"[NATIONAL] Quel est le but principal du Groupement des Archivistes ?", a:"Centraliser et sécuriser les informations du folklore faluchard pour limiter la propagation de légendes urbaines, faux insignes ou particularités erronées.", cat:"Archivistes", src:"NATIONAL" },
+
+  { id:"cv19", q:"[NATIONAL] Circulaire complet : PASS", a:"Circulaire couleur de la filière santé choisie (variable) pour PASS — insigne : Tête de mort sur fémurs croisés", cat:"Circulaire velours", src:"NATIONAL" },
+  { id:"cv20", q:"[NATIONAL] Circulaire complet : LAS", a:"Circulaire couleur de la discipline majoritaire (variable) pour LAS — insigne : emblème de la discipline majoritaire", cat:"Circulaire velours", src:"NATIONAL" },
+  { id:"cs32", q:"[NATIONAL] Circulaire complet : IUP", a:"Satin couleurs de la discipline étudiée (variable) pour IUP — insigne : Lettres « IUP »", cat:"Circulaire satin", src:"NATIONAL" },
+  { id:"cs33", q:"[NATIONAL] Circulaire complet : Écoles nationales", a:"Satin couleurs du pays de l'école (variable) pour Écoles nationales — insigne : Lettres des initiales de l'école", cat:"Circulaire satin", src:"NATIONAL" },
+  { id:"cs34", q:"[NATIONAL] Circulaire complet : Communication", a:"Satin couleurs de la filière de rattachement (variable) pour Communication — insigne : Caducée de Mercure", cat:"Circulaire satin", src:"NATIONAL" },
+
 ];
