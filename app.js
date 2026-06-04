@@ -116,57 +116,126 @@ function parseCirc(q) {
   const pourIdx = q.a.lastIndexOf(' pour ');
   if (surIdx === -1 || pourIdx === -1) return null;
   const filiere = q.a.slice(pourIdx + 6).trim();
+  const matCoul = q.a.slice(surIdx + 5, pourIdx).trim();
+  // Une filière est "variable" si sa couleur dépend d'autre chose (pas une couleur fixe)
+  const isVariable = /couleur|ufr/i.test(matCoul);
   return {
     id: q.id,
     insigne: q.a.slice(0, surIdx).trim(),
-    matCoul: q.a.slice(surIdx + 5, pourIdx).trim(),
+    matCoul: matCoul,
     filiere: filiere,
     filiereClean: cleanFiliere(filiere),
+    isVariable: isVariable,
     full: q.a,
   };
 }
 
+// Liste des circulaires à COULEUR FIXE (pour le matching couleur strict)
 function getCircList(type) {
   return ALL_QUESTIONS
     .filter(q => q.cat === ('Circulaire ' + type) && q.src === 'NATIONAL'
-      && / sur /.test(q.a) && / pour /.test(q.a) && !/variable/i.test(q.a))
+      && / sur /.test(q.a) && / pour /.test(q.a))
     .map(parseCirc)
-    .filter(c => c && !/couleur|ufr| sur /i.test(c.matCoul));
+    .filter(c => c && !c.isVariable);
+}
+
+// Liste des circulaires à COULEUR VARIABLE (PASS, LAS, DU, IUP, Communication, Écoles nationales)
+function getCircVarList(type) {
+  return ALL_QUESTIONS
+    .filter(q => q.cat === ('Circulaire ' + type) && q.src === 'NATIONAL'
+      && / sur /.test(q.a) && / pour /.test(q.a))
+    .map(parseCirc)
+    .filter(c => c && c.isVariable);
+}
+
+// Mots-clés indiquant que l'utilisateur précise d'où vient la couleur variable.
+// Match exact ou inclusion uniquement (PAS de tolérance Levenshtein : "pass" ne doit
+// pas être confondu avec "pays", etc.)
+function mentionsColorSource(userWords) {
+  const kw = ['filiere','majeure','discipline','matiere','choisie','pays','ecole',
+              'rattachement','ufr','majoritaire','etudiee','sante'];
+  return kw.some(k => userWords.some(u =>
+    u === k || (k.length >= 4 && (u.includes(k) || k.includes(u) && u.length >= 4))
+  ));
 }
 
 function filiereWordsCount(c) {
   return normalize(c.filiereClean).split(' ').filter(w => w.length >= 3).length;
 }
 
+// Ratio de match d'une filière, en gérant le "/" comme un OU
+// "BUT/DUT" -> il suffit de citer "but" OU "dut" pour matcher à 100%
+function filiereMatchRatio(userWords, filiereClean) {
+  if (filiereClean.indexOf('/') !== -1) {
+    const variants = filiereClean.split('/').map(v => v.trim()).filter(Boolean);
+    let best = 0;
+    for (const v of variants) best = Math.max(best, wordRatio(userWords, v, 2));
+    return best;
+  }
+  return wordRatio(userWords, filiereClean, 3);
+}
+function filiereSpecificity(c) {
+  if (c.filiereClean.indexOf('/') !== -1) {
+    // nombre de mots du variant le plus court (pour départager)
+    const variants = c.filiereClean.split('/').map(v => v.trim()).filter(Boolean);
+    return Math.min(...variants.map(v => normalize(v).split(' ').filter(w => w.length >= 2).length));
+  }
+  return filiereWordsCount(c);
+}
+
 function checkCirc(input, type) {
   const circs = getCircList(type);
   const userWords = normalize(input).split(' ').filter(w => w.length >= 2);
-  let best = null, bestScore = -1;
-  // 1. Match complet de la filière (toutes ses parties significatives présentes)
+
+  // Construire la liste des candidates à couleur FIXE avec leur score de filière
+  const candidates = [];
   for (const c of circs) {
-    const nWords = filiereWordsCount(c);
-    if (nWords === 0) continue; // filières sans mot significatif (ex: "DU") : pas de match auto
-    const fr = wordRatio(userWords, c.filiereClean, 3);
-    if (fr >= 0.99) {
-      const score = 1000 + nWords; // la plus spécifique gagne
-      if (score > bestScore) { bestScore = score; best = c; }
+    const nWords = filiereSpecificity(c);
+    if (nWords === 0) continue;
+    const fr = filiereMatchRatio(userWords, c.filiereClean);
+    if (fr >= 0.5) candidates.push({ c, fr, spec: nWords });
+  }
+
+  // Candidates à couleur VARIABLE (PASS, LAS, DU, IUP, etc.)
+  const varCircs = getCircVarList(type);
+  const varCandidates = [];
+  for (const c of varCircs) {
+    const ml = c.filiereClean.length <= 3 ? 2 : 3;
+    const fr = wordRatio(userWords, c.filiereClean, ml);
+    if (fr >= 0.99) varCandidates.push({ c, fr });
+  }
+
+  // 1. Essayer les filières à couleur fixe (priorité car plus strictes)
+  candidates.sort((a, b) => {
+    const aFull = a.fr >= 0.99 ? 1 : 0, bFull = b.fr >= 0.99 ? 1 : 0;
+    if (aFull !== bFull) return bFull - aFull;
+    if (b.spec !== a.spec) return b.spec - a.spec;
+    return b.fr - a.fr;
+  });
+  let firstFiliere = candidates.length ? candidates[0].c.filiere : null;
+  let lastInsigneOk = false, lastMatCoulOk = false;
+  for (const cand of candidates) {
+    const insigneOk = wordRatio(userWords, cand.c.insigne, 3) >= 0.5;
+    const matCoulOk = allWordsPresent(userWords, cand.c.matCoul, 3);
+    if (insigneOk && matCoulOk) return { ok: true, filiere: cand.c.filiere, circ: cand.c };
+    lastInsigneOk = insigneOk; lastMatCoulOk = matCoulOk;
+  }
+
+  // 2. Essayer les filières à couleur variable
+  //    Validation : insigne correct + mention d'où vient la couleur
+  for (const cand of varCandidates) {
+    const insigneOk = wordRatio(userWords, cand.c.insigne, 3) >= 0.4;
+    const sourceOk = mentionsColorSource(userWords);
+    if (insigneOk && sourceOk) return { ok: true, filiere: cand.c.filiere, circ: cand.c };
+    if (!firstFiliere) {
+      firstFiliere = cand.c.filiere;
+      lastInsigneOk = insigneOk; lastMatCoulOk = sourceOk;
     }
   }
-  // 2. Fallback : meilleur ratio partiel (au moins 60% des mots de la filière)
-  if (!best) {
-    for (const c of circs) {
-      const nWords = filiereWordsCount(c);
-      if (nWords === 0) continue;
-      const fr = wordRatio(userWords, c.filiereClean, 3);
-      if (fr >= 0.5 && fr > bestScore) { bestScore = fr; best = c; }
-    }
-  }
-  if (!best) return { ok: false, reason: 'filiere_inconnue' };
-  // 3. Valider insigne ET matière/couleur pour CETTE filière
-  const insigneOk = wordRatio(userWords, best.insigne, 3) >= 0.5;
-  const matCoulOk = allWordsPresent(userWords, best.matCoul, 3);
-  if (insigneOk && matCoulOk) return { ok: true, filiere: best.filiere, circ: best };
-  return { ok: false, reason: 'incomplet', filiere: best.filiere, circ: best, insigneOk, matCoulOk };
+
+  if (!firstFiliere) return { ok: false, reason: 'filiere_inconnue' };
+  return { ok: false, reason: 'incomplet', filiere: firstFiliere,
+           insigneOk: lastInsigneOk, matCoulOk: lastMatCoulOk };
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -877,16 +946,24 @@ function colorHex(matCoul) {
   return '#888888';
 }
 
-// Construit les groupes de couleurs pour un type donné, triés arc-en-ciel
+// Construit les groupes de couleurs pour un type donné, triés arc-en-ciel.
+// Les filières à couleur variable sont regroupées dans un groupe spécial "Variable".
 function buildCircGroups(type) {
   const circs = getCircList(type);
   const groups = {};
   for (const c of circs) {
     const key = c.matCoul;
-    if (!groups[key]) groups[key] = { matCoul: key, hex: colorHex(key), filieres: [] };
+    if (!groups[key]) groups[key] = { matCoul: key, hex: colorHex(key), filieres: [], variable: false };
     groups[key].filieres.push(c);
   }
-  return Object.values(groups).sort((a, b) => colorRank(a.matCoul) - colorRank(b.matCoul));
+  const ordered = Object.values(groups).sort((a, b) => colorRank(a.matCoul) - colorRank(b.matCoul));
+
+  // Groupe variable (PASS, LAS, DU, IUP, Communication, Écoles nationales)
+  const varCircs = getCircVarList(type);
+  if (varCircs.length) {
+    ordered.push({ matCoul: 'Variable', hex: 'VARIABLE', filieres: varCircs, variable: true });
+  }
+  return ordered;
 }
 
 function renderRecit(main) {
@@ -989,10 +1066,22 @@ function renderRecitCirculaire(type) {
       const x2 = cx + r * Math.cos(endAngle);
       const y2 = cy + r * Math.sin(endAngle);
       const lg = angleStep > Math.PI ? 1 : 0;
-      svgSlices += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(1) + ',' + y1.toFixed(1) + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x2.toFixed(1) + ',' + y2.toFixed(1) + ' Z" fill="' + hex + '" stroke="#0a0a0a" stroke-width="1.5"><title>' + filiere + '</title></path>';
+      const fill = hex === 'VARIABLE' ? 'url(#rainbowGrad)' : hex;
+      svgSlices += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(1) + ',' + y1.toFixed(1) + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x2.toFixed(1) + ',' + y2.toFixed(1) + ' Z" fill="' + fill + '" stroke="#0a0a0a" stroke-width="1.5"><title>' + filiere + '</title></path>';
       startAngle = endAngle;
     });
   }
+
+  // Dégradé arc-en-ciel pour les tranches à couleur variable
+  const svgDefs = '<defs><linearGradient id="rainbowGrad" x1="0%" y1="0%" x2="100%" y2="100%">'
+    + '<stop offset="0%" stop-color="#e8003a"/>'
+    + '<stop offset="20%" stop-color="#ff8c00"/>'
+    + '<stop offset="40%" stop-color="#ffd400"/>'
+    + '<stop offset="60%" stop-color="#2db82d"/>'
+    + '<stop offset="80%" stop-color="#1e6fff"/>'
+    + '<stop offset="100%" stop-color="#9b30ff"/>'
+    + '</linearGradient></defs>';
+  svgSlices = svgDefs + svgSlices;
 
   let html = '';
   html += '<div class="circ-progress">' + totalDone + ' / ' + total + ' filières récitées</div>';
@@ -1006,9 +1095,12 @@ function renderRecitCirculaire(type) {
     const remaining = g.filieres.filter(c => !done[c.filiere]).length;
     const isDone = remaining === 0;
     const colName = g.matCoul.replace(/^(Velours|Satin)\s+/i, '');
+    const dotStyle = g.hex === 'VARIABLE'
+      ? 'background:linear-gradient(135deg,#e8003a,#ff8c00,#ffd400,#2db82d,#1e6fff,#9b30ff);opacity:' + (isDone?'0.3':'1')
+      : 'background:' + g.hex + ';opacity:' + (isDone?'0.3':'1');
     html += '<div class="circ-leg-block">';
     html += '<div class="circ-leg-item">';
-    html += '<span class="circ-leg-dot" style="background:' + g.hex + ';opacity:' + (isDone?'0.3':'1') + '"></span>';
+    html += '<span class="circ-leg-dot" style="' + dotStyle + '"></span>';
     html += '<span class="circ-leg-name" style="color:' + (isDone?'#555':'#bbb') + '">' + colName + '</span>';
     html += '<span class="circ-leg-count" style="color:' + (isDone?'#4CAF50':'#c9a96e') + '">' + remaining + '</span>';
     html += '</div>';
