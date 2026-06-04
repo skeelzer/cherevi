@@ -30,7 +30,7 @@ const ALL_QUESTIONS = [
   { id:"cv4", q:"[NATIONAL] Circulaire complet : Ostéopathie", a:"Sphénoïde sur Velours bleu roy pour Ostéopathie", cat:"Circulaire velours", src:"NATIONAL" },
   { id:"cv5", q:"[NATIONAL] Circulaire complet : Paramédical", a:"Ciseaux sur Velours rose pour Paramédical", cat:"Circulaire velours", src:"NATIONAL" },
   { id:"cv6", q:"[IPP] Comment le code IPP nomme-t-il le circulaire du paramédical ?", a:"Satin rose trompeur (au lieu de velours rose dans le national).", cat:"Circulaire velours", src:"IPP" },
-  { id:"cv7", q:"[NATIONAL] Circulaire complet : Pharmacie / préparateurs en pharmacie", a:"Caducée de pharmacie / Mortier et pilon sur Velours vert pour Pharmacie / Préparateurs en pharmacie", cat:"Circulaire velours", src:"NATIONAL" },
+  { id:"cv7", q:"[NATIONAL] Circulaire complet : Pharmacie", a:"Caducée de pharmacie sur Velours vert pour Pharmacie", cat:"Circulaire velours", src:"NATIONAL" },   { id:"cv7b", q:"[NATIONAL] Circulaire complet : Préparateurs en pharmacie", a:"Mortier et pilon sur Velours vert pour Préparateurs en pharmacie", cat:"Circulaire velours", src:"NATIONAL" },
   { id:"cv8", q:"[NATIONAL] Circulaire complet : Classes préparatoires santé", a:"Chouette bicéphale sur Velours marron pour Classes préparatoires santé", cat:"Circulaire velours", src:"NATIONAL" },
   { id:"cv9", q:"[NATIONAL] Circulaire complet : Sage-Femme", a:"Croix d'Ânkh sur Velours fuchsia pour Sage-Femme", cat:"Circulaire velours", src:"NATIONAL" },
   { id:"cv10", q:"[IPP] Comment le code IPP désigne-t-il le circulaire de Sage-Femme ?", a:"Sage-Femme : « Meuf d'Antoine ». Sage-Femme PO : Satin Fuchsia.", cat:"Circulaire velours", src:"IPP" },
