@@ -11,8 +11,49 @@ function shuffle(arr) {
 }
 
 function normalize(s) {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return String(s).toLowerCase()
+    .replace(/\u0153/g, 'oe').replace(/\u00e6/g, 'ae')
+    .replace(/-/g, ' ')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return dp[m][n];
+}
+
+function wordMatch(u, t) {
+  if (u === t) return true;
+  if (t.length >= 4 && u.includes(t)) return true;
+  if (u.length >= 4 && t.includes(u)) return true;
+  const md = t.length <= 5 ? 1 : 2;
+  return levenshtein(u, t) <= md;
+}
+
+function cleanFiliere(f) {
+  return f.replace(/\([^)]*\)/g, '').trim();
+}
+
+function allWordsPresent(userWords, targetStr, minLen) {
+  minLen = minLen || 3;
+  const tw = normalize(targetStr).split(' ').filter(w => w.length >= minLen);
+  if (!tw.length) return true;
+  return tw.every(t => userWords.some(u => wordMatch(u, t)));
+}
+
+function wordRatio(userWords, targetStr, minLen) {
+  minLen = minLen || 3;
+  const tw = normalize(targetStr).split(' ').filter(w => w.length >= minLen);
+  if (!tw.length) return 1;
+  const h = tw.filter(t => userWords.some(u => wordMatch(u, t))).length;
+  return h / tw.length;
 }
 
 function autoCheck(userAns, correctAns) {
@@ -48,20 +89,10 @@ function getBadgeSVG(qid) {
 function renderBadgeHTML(qid, context) {
   const svg = getBadgeSVG(qid);
   if (!svg) return '';
-  // context: 'question' | 'answer' | 'result' | 'stats' | 'recit'
-  if (context === 'answer') {
-    return '<div class="answer-badge-wrap"><div class="badge-img">' + svg + '</div></div>';
-  }
-  if (context === 'result') {
-    return '<div class="badge-img">' + svg + '</div>';
-  }
-  if (context === 'stats') {
-    return '<div class="badge-img">' + svg + '</div>';
-  }
-  if (context === 'recit') {
-    return '<div class="badge-img">' + svg + '</div>';
-  }
-  // default: question context — large centered
+  if (context === 'answer') return '<div class="answer-badge-wrap"><div class="badge-img">' + svg + '</div></div>';
+  if (context === 'result') return '<div class="badge-img">' + svg + '</div>';
+  if (context === 'stats') return '<div class="badge-img">' + svg + '</div>';
+  if (context === 'recit') return '<div class="badge-img">' + svg + '</div>';
   return '<div class="quiz-badge-wrap"><div class="badge-img">' + svg + '</div></div>';
 }
 
@@ -77,7 +108,66 @@ function pct(c, p, w) {
   return t ? Math.round(((c + p * 0.5) / t) * 100) : 0;
 }
 
-function emoji(p) { return p >= 80 ? '🏆' : p >= 60 ? '📚' : '💪'; }
+function emoji(p) { return p >= 80 ? '\u{1F3C6}' : p >= 60 ? '\u{1F4DA}' : '\u{1F4AA}'; }
+
+// ── Circulaires : parsing + matching robuste ──────────────────────────────────
+function parseCirc(q) {
+  const surIdx = q.a.indexOf(' sur ');
+  const pourIdx = q.a.lastIndexOf(' pour ');
+  if (surIdx === -1 || pourIdx === -1) return null;
+  const filiere = q.a.slice(pourIdx + 6).trim();
+  return {
+    id: q.id,
+    insigne: q.a.slice(0, surIdx).trim(),
+    matCoul: q.a.slice(surIdx + 5, pourIdx).trim(),
+    filiere: filiere,
+    filiereClean: cleanFiliere(filiere),
+    full: q.a,
+  };
+}
+
+function getCircList(type) {
+  return ALL_QUESTIONS
+    .filter(q => q.cat === ('Circulaire ' + type) && q.src === 'NATIONAL'
+      && / sur /.test(q.a) && / pour /.test(q.a) && !/variable/i.test(q.a))
+    .map(parseCirc)
+    .filter(c => c && !/couleur|ufr| sur /i.test(c.matCoul));
+}
+
+function filiereWordsCount(c) {
+  return normalize(c.filiereClean).split(' ').filter(w => w.length >= 3).length;
+}
+
+function checkCirc(input, type) {
+  const circs = getCircList(type);
+  const userWords = normalize(input).split(' ').filter(w => w.length >= 2);
+  let best = null, bestScore = -1;
+  // 1. Match complet de la filière (toutes ses parties significatives présentes)
+  for (const c of circs) {
+    const nWords = filiereWordsCount(c);
+    if (nWords === 0) continue; // filières sans mot significatif (ex: "DU") : pas de match auto
+    const fr = wordRatio(userWords, c.filiereClean, 3);
+    if (fr >= 0.99) {
+      const score = 1000 + nWords; // la plus spécifique gagne
+      if (score > bestScore) { bestScore = score; best = c; }
+    }
+  }
+  // 2. Fallback : meilleur ratio partiel (au moins 60% des mots de la filière)
+  if (!best) {
+    for (const c of circs) {
+      const nWords = filiereWordsCount(c);
+      if (nWords === 0) continue;
+      const fr = wordRatio(userWords, c.filiereClean, 3);
+      if (fr >= 0.5 && fr > bestScore) { bestScore = fr; best = c; }
+    }
+  }
+  if (!best) return { ok: false, reason: 'filiere_inconnue' };
+  // 3. Valider insigne ET matière/couleur pour CETTE filière
+  const insigneOk = wordRatio(userWords, best.insigne, 3) >= 0.5;
+  const matCoulOk = allWordsPresent(userWords, best.matCoul, 3);
+  if (insigneOk && matCoulOk) return { ok: true, filiere: best.filiere, circ: best };
+  return { ok: false, reason: 'incomplet', filiere: best.filiere, circ: best, insigneOk, matCoulOk };
+}
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const STATE = {
@@ -94,6 +184,7 @@ const STATE = {
   customQuestions: [],
   showAddQuestion: false,
   recitMode: 'libre',
+  showCorrection: null,
 };
 
 const CATS = ['ALL', ...Array.from(new Set(ALL_QUESTIONS.map(q => q.cat)))];
@@ -110,7 +201,6 @@ const CAT_COLORS = {
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-
 // ── Render ────────────────────────────────────────────────────────────────────
 function render() {
   const app = document.getElementById('app');
@@ -743,65 +833,80 @@ function recitCheck(input) {
   return { status, matches, best };
 }
 
-// ── RÉCITATION ────────────────────────────────────────────────────────────────
+// Couleurs d'affichage par nom de matière/couleur (arc-en-ciel)
+const COLOR_HEX = {
+  'Velours fuchsia':'#cc007a', 'Velours rouge':'#c0152a', 'Velours bordeaux':'#800020',
+  'Velours marron':'#5C3317', 'Velours vert':'#2d8b2d', 'Velours bleu roy':'#00416A',
+  'Velours violet':'#6a0dad', 'Velours rose':'#e87ab0', 'Velours blanc':'#e8e8e8',
+  'Satin rouge':'#c0152a', 'Satin rouge et vert':'#9a4a1a', 'Satin rouge et bleu':'#7a2a6a',
+  'Satin orange':'#cc6600', 'Satin jaune':'#d4c020', 'Satin vert clair':'#7acc7a',
+  'Satin vert foncé':'#1a6b1a', 'Satin bleu':'#2266cc', 'Satin bleu roy et noir':'#1a2a5a',
+  'Satin violet':'#6a0dad', 'Satin saumon':'#e89b7a', 'Satin blanc et rouge':'#d89a9a',
+  'Satin blanc':'#e8e8e8', 'Satin argenté':'#b8b8c0', 'Satin gris':'#888888',
+  'Satin marron':'#5C3317',
+};
+// Ordre arc-en-ciel pour le tri d'affichage
+const COLOR_ORDER = [
+  'fuchsia','rose','rouge','bordeaux','rouge et vert','rouge et bleu','saumon','orange',
+  'marron','jaune','argenté','vert clair','vert','vert foncé','bleu','bleu roy','bleu roy et noir',
+  'violet','blanc et rouge','blanc','gris',
+];
+function colorRank(matCoul) {
+  const c = matCoul.replace(/^(Velours|Satin)\s+/i, '').toLowerCase();
+  const i = COLOR_ORDER.indexOf(c);
+  return i === -1 ? 999 : i;
+}
+function colorHex(matCoul) {
+  if (COLOR_HEX[matCoul]) return COLOR_HEX[matCoul];
+  // fallback : déduire du nom de couleur
+  const c = matCoul.toLowerCase();
+  if (c.includes('fuchsia')) return '#cc007a';
+  if (c.includes('rose')) return '#e87ab0';
+  if (c.includes('bordeaux')) return '#800020';
+  if (c.includes('rouge')) return '#c0152a';
+  if (c.includes('saumon')) return '#e89b7a';
+  if (c.includes('orange')) return '#cc6600';
+  if (c.includes('marron')) return '#5C3317';
+  if (c.includes('jaune')) return '#d4c020';
+  if (c.includes('argent')) return '#b8b8c0';
+  if (c.includes('gris')) return '#888888';
+  if (c.includes('vert')) return '#2d8b2d';
+  if (c.includes('bleu')) return '#2266cc';
+  if (c.includes('violet')) return '#6a0dad';
+  if (c.includes('blanc')) return '#e8e8e8';
+  return '#888888';
+}
 
-// Données circulaires pour les camemberts
-const CIRC_VELOURS = [
-  { couleur:'#cc007a', nom:'Fuchsia',  filières:['Sage-Femme'] },
-  { couleur:'#8B0000', nom:'Rouge',    filières:['Médecine'] },
-  { couleur:'#800020', nom:'Bordeaux', filières:['Vétérinaire'] },
-  { couleur:'#cc6600', nom:'Orange',   filières:[] },
-  { couleur:'#5C3317', nom:'Marron',   filières:['Classes préparatoires santé'] },
-  { couleur:'#cccc44', nom:'Jaune',    filières:[] },
-  { couleur:'#2d8b2d', nom:'Vert',     filières:['Pharmacie','Préparateurs en pharmacie'] },
-  { couleur:'#00416A', nom:'Bleu roy', filières:['Ostéopathie'] },
-  { couleur:'#6a0dad', nom:'Violet',   filières:['Chirurgie dentaire'] },
-  { couleur:'#d44d8c', nom:'Rose',     filières:['Paramédical','Infirmier','Kinésithérapie'] },
-  { couleur:'#cccccc', nom:'Blanc',    filières:['Études courtes de santé'] },
-].filter(c => c.filières.length > 0);
-
-const CIRC_SATIN = [
-  { couleur:'#cc0000', nom:'Rouge',         filières:['Droit'] },
-  { couleur:'#884400', nom:'Rouge/vert',    filières:['Écoles de commerce/gestion'] },
-  { couleur:'#882244', nom:'Rouge/bleu',    filières:['Sciences politiques'] },
-  { couleur:'#cc6600', nom:'Orange',        filières:['Sciences économiques et gestion','IAE'] },
-  { couleur:'#cccc00', nom:'Jaune',         filières:['Lettres/Langues/SHS','Géographie','Histoire','Philosophie','Psychologie','Sociologie','Histoire de l\'art et archéologie'] },
-  { couleur:'#7acc7a', nom:'Vert clair',    filières:['AES'] },
-  { couleur:'#1a6b1a', nom:'Vert foncé',   filières:['Filières sportives'] },
-  { couleur:'#0044cc', nom:'Bleu',          filières:['Architecture','Arts du spectacle','Arts numériques','Beaux-arts'] },
-  { couleur:'#00416A', nom:'Bleu roy/noir', filières:['Écoles d\'ingénieurs'] },
-  { couleur:'#6a0dad', nom:'Violet',        filières:['Sciences'] },
-  { couleur:'#cc7755', nom:'Saumon',        filières:['Œnologie'] },
-  { couleur:'#ddaaaa', nom:'Blanc/rouge',   filières:['Théologie'] },
-  { couleur:'#cccccc', nom:'Blanc',         filières:['BUT','DUT','BTS','Bachelor (RNCP)'] },
-  { couleur:'#aaaaaa', nom:'Argenté',       filières:['Musique/Musicologie'] },
-  { couleur:'#777777', nom:'Gris',          filières:['MEEF'] },
-  { couleur:'#5C3317', nom:'Marron',        filières:['Classes préparatoires'] },
-].filter(c => c.filières.length > 0);
+// Construit les groupes de couleurs pour un type donné, triés arc-en-ciel
+function buildCircGroups(type) {
+  const circs = getCircList(type);
+  const groups = {};
+  for (const c of circs) {
+    const key = c.matCoul;
+    if (!groups[key]) groups[key] = { matCoul: key, hex: colorHex(key), filieres: [] };
+    groups[key].filieres.push(c);
+  }
+  return Object.values(groups).sort((a, b) => colorRank(a.matCoul) - colorRank(b.matCoul));
+}
 
 function renderRecit(main) {
   const mode = STATE.recitMode || 'libre';
-
   let html = '<div class="recit-wrap">';
   html += '<div class="recit-tabs">';
   html += '<button class="recit-tab ' + (mode==='libre'?'active':'') + '" data-rmode="libre">Libre</button>';
-  html += '<button class="recit-tab ' + (mode==='velours'?'active':'') + '" data-rmode="velours">Circulaire Velours</button>';
-  html += '<button class="recit-tab ' + (mode==='satin'?'active':'') + '" data-rmode="satin">Circulaire Satin</button>';
+  html += '<button class="recit-tab ' + (mode==='velours'?'active':'') + '" data-rmode="velours">Circ. Velours</button>';
+  html += '<button class="recit-tab ' + (mode==='satin'?'active':'') + '" data-rmode="satin">Circ. Satin</button>';
   html += '</div>';
 
-  if (mode === 'libre') {
-    html += renderRecitLibre();
-  } else if (mode === 'velours') {
-    html += renderRecitCirculaire('velours');
-  } else {
-    html += renderRecitCirculaire('satin');
-  }
+  if (mode === 'libre') html += renderRecitLibre();
+  else html += renderRecitCirculaire(mode);
 
   html += '</div>';
   main.innerHTML = html;
 
   main.querySelectorAll('[data-rmode]').forEach(b => b.addEventListener('click', () => {
     STATE.recitMode = b.dataset.rmode;
+    STATE.showCorrection = null;
     renderRecit(main);
   }));
 
@@ -854,40 +959,38 @@ function renderRecitLibre() {
 }
 
 function renderRecitCirculaire(type) {
-  const data = type === 'velours' ? CIRC_VELOURS : CIRC_SATIN;
+  const groups = buildCircGroups(type);
   const done = STATE['recitDone_' + type] || {};
-  const total = data.reduce((a, c) => a + c.filières.length, 0);
+  const total = groups.reduce((a, g) => a + g.filieres.length, 0);
   const totalDone = Object.keys(done).length;
+  const matLabel = type === 'velours' ? 'Velours' : 'Satin';
 
-  // Construire les tranches — une tranche par filière non faite, groupées par couleur
-  const cx = 110, cy = 110, r = 100;
+  // Camembert : une tranche par filière NON FAITE, groupée par couleur
+  const cx = 130, cy = 130, r = 120;
   let svgSlices = '';
   let startAngle = -Math.PI / 2;
-
-  // Compter les tranches restantes par couleur
-  const tranchesParCouleur = data.map(c => ({
-    ...c,
-    remaining: c.filières.filter(f => !done[f])
-  }));
-  const totalTranches = tranchesParCouleur.reduce((a, c) => a + c.remaining.length, 0);
+  const remainingFilieres = [];
+  groups.forEach(g => {
+    g.filieres.forEach(c => {
+      if (!done[c.filiere]) remainingFilieres.push({ hex: g.hex, filiere: c.filiere });
+    });
+  });
+  const totalTranches = remainingFilieres.length;
 
   if (totalTranches === 0) {
-    // Tout fait — cercle plein vert
     svgSlices = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="#1a5a1a" stroke="#4CAF50" stroke-width="2"/>';
-    svgSlices += '<text x="' + cx + '" y="' + (cy+8) + '" text-anchor="middle" fill="#4CAF50" font-size="18">✓</text>';
+    svgSlices += '<text x="' + cx + '" y="' + (cy+10) + '" text-anchor="middle" fill="#4CAF50" font-size="28">✓</text>';
   } else {
     const angleStep = (2 * Math.PI) / totalTranches;
-    tranchesParCouleur.forEach(c => {
-      c.remaining.forEach(f => {
-        const endAngle = startAngle + angleStep;
-        const x1 = cx + r * Math.cos(startAngle);
-        const y1 = cy + r * Math.sin(startAngle);
-        const x2 = cx + r * Math.cos(endAngle);
-        const y2 = cy + r * Math.sin(endAngle);
-        const lg = angleStep > Math.PI ? 1 : 0;
-        svgSlices += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(1) + ',' + y1.toFixed(1) + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x2.toFixed(1) + ',' + y2.toFixed(1) + ' Z" fill="' + c.couleur + '" stroke="#0a0a0a" stroke-width="1.5"><title>' + f + '</title></path>';
-        startAngle = endAngle;
-      });
+    remainingFilieres.forEach(({ hex, filiere }) => {
+      const endAngle = startAngle + angleStep;
+      const x1 = cx + r * Math.cos(startAngle);
+      const y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(endAngle);
+      const y2 = cy + r * Math.sin(endAngle);
+      const lg = angleStep > Math.PI ? 1 : 0;
+      svgSlices += '<path d="M' + cx + ',' + cy + ' L' + x1.toFixed(1) + ',' + y1.toFixed(1) + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x2.toFixed(1) + ',' + y2.toFixed(1) + ' Z" fill="' + hex + '" stroke="#0a0a0a" stroke-width="1.5"><title>' + filiere + '</title></path>';
+      startAngle = endAngle;
     });
   }
 
@@ -895,57 +998,75 @@ function renderRecitCirculaire(type) {
   html += '<div class="circ-progress">' + totalDone + ' / ' + total + ' filières récitées</div>';
 
   html += '<div class="circ-layout">';
+  html += '<svg viewBox="0 0 260 260" class="circ-pie">' + svgSlices + '</svg>';
 
-  // Camembert — plus grand
-  html += '<svg viewBox="0 0 220 220" class="circ-pie">' + svgSlices + '</svg>';
-
-  // Légende compacte
+  // Légende : chaque couleur, son compteur, et les filières déjà récitées en dessous
   html += '<div class="circ-legend">';
-  tranchesParCouleur.forEach(c => {
-    const remaining = c.remaining.length;
+  groups.forEach(g => {
+    const remaining = g.filieres.filter(c => !done[c.filiere]).length;
     const isDone = remaining === 0;
+    const colName = g.matCoul.replace(/^(Velours|Satin)\s+/i, '');
+    html += '<div class="circ-leg-block">';
     html += '<div class="circ-leg-item">';
-    html += '<span class="circ-leg-dot" style="background:' + c.couleur + ';opacity:' + (isDone?'0.3':'1') + '"></span>';
-    html += '<span class="circ-leg-name" style="color:' + (isDone?'#444':'#aaa') + '">' + c.nom + '</span>';
+    html += '<span class="circ-leg-dot" style="background:' + g.hex + ';opacity:' + (isDone?'0.3':'1') + '"></span>';
+    html += '<span class="circ-leg-name" style="color:' + (isDone?'#555':'#bbb') + '">' + colName + '</span>';
     html += '<span class="circ-leg-count" style="color:' + (isDone?'#4CAF50':'#c9a96e') + '">' + remaining + '</span>';
     html += '</div>';
-    // Filières faites sous la couleur
-    c.filières.filter(f => done[f]).forEach(f => {
-      html += '<div class="circ-done-item">✓ ' + f + '</div>';
+    g.filieres.filter(c => done[c.filiere]).forEach(c => {
+      html += '<div class="circ-done-item">✓ ' + c.filiere + '</div>';
     });
+    html += '</div>';
   });
   html += '</div>';
-  html += '</div>'; // circ-layout
+  html += '</div>';
 
   // Input
   html += '<div class="recit-input-area" style="margin-top:0.75rem">';
-  html += '<div class="recit-sub" style="margin-bottom:0.4rem;font-size:0.78rem">Format : <em>insigne sur Matière couleur pour Filière</em></div>';
-  html += '<textarea class="answer-input" id="circInput" placeholder="ex: Caducée médecine sur Velours rouge pour Médecine" rows="2">' + (STATE['circInput_'+type]||'') + '</textarea>';
-  html += '<div class="btn-row"><button class="btn-primary" id="circCheckBtn">Vérifier ✓</button><button class="btn-ghost" id="circResetBtn">🗑 Reset</button></div>';
+  html += '<div class="recit-sub" style="margin-bottom:0.4rem;font-size:0.78rem">Format : <em>insigne sur ' + matLabel + ' couleur pour Filière</em></div>';
+  html += '<textarea class="answer-input" id="circInput" placeholder="ex: Caducée médecine sur ' + matLabel + ' rouge pour Médecine" rows="2">' + (STATE['circInput_'+type]||'') + '</textarea>';
+  html += '<div class="btn-row"><button class="btn-primary" id="circCheckBtn">Vérifier ✓</button><button class="btn-ghost" id="circCorrectionBtn">📖 Correction</button></div>';
+  html += '<div class="btn-row" style="margin-top:0.4rem"><button class="btn-ghost btn-danger" id="circResetBtn">🗑 Reset progression</button></div>';
   html += '</div>';
 
   if (STATE['circResult_'+type]) {
     const res = STATE['circResult_'+type];
     html += '<div class="recit-result-box" style="border-color:' + (res.ok?'#4CAF5044':'#f4433644') + ';margin-top:0.5rem">';
-    html += '<div class="recit-verdict" style="color:' + (res.ok?'#4CAF50':'#f44336') + '">' + (res.ok?'✓ Correct !':'✗ ' + res.msg) + '</div>';
-    if (res.expected) html += '<div class="recit-hint" style="margin-top:0.4rem;color:#a0d080">Attendu : ' + res.expected + '</div>';
+    html += '<div class="recit-verdict" style="color:' + (res.ok?'#4CAF50':'#f44336') + '">' + (res.ok?'✓ Correct ! (' + res.filiere + ')':'✗ ' + res.msg) + '</div>';
     html += '</div>';
+  }
+
+  // Sous-fenêtre Correction (modal)
+  if (STATE.showCorrection === type) {
+    const notDone = [];
+    groups.forEach(g => g.filieres.forEach(c => { if (!done[c.filiere]) notDone.push(c); }));
+    html += '<div class="modal-overlay" id="correctionOverlay">';
+    html += '<div class="modal-box">';
+    html += '<div class="modal-header"><span>📖 Correction — ' + (notDone.length) + ' restantes</span><button id="closeCorrection">✕</button></div>';
+    html += '<div class="modal-body">';
+    if (!notDone.length) {
+      html += '<div style="text-align:center;color:#4CAF50;padding:1rem">🎯 Toutes les filières ont été récitées !</div>';
+    } else {
+      notDone.forEach(c => {
+        html += '<div class="corr-item"><div class="corr-fil">' + c.filiere + '</div><div class="corr-full">' + c.full + '</div></div>';
+      });
+    }
+    html += '</div></div></div>';
   }
 
   return html;
 }
 
 function bindRecitLibre(main) {
-  const ta = document.getElementById('recitInput');
+  const ta = $('recitInput');
   if (ta) {
     ta.addEventListener('input', e => { STATE.recitInput = e.target.value; });
     ta.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); doRecitCheck(main); } });
   }
-  const checkBtn = document.getElementById('recitCheckBtn');
+  const checkBtn = $('recitCheckBtn');
   if (checkBtn) checkBtn.addEventListener('click', () => doRecitCheck(main));
-  const clearBtn = document.getElementById('recitClearBtn');
+  const clearBtn = $('recitClearBtn');
   if (clearBtn) clearBtn.addEventListener('click', () => { STATE.recitInput=''; STATE.recitResult=null; renderRecit(main); });
-  const histBtn = document.getElementById('recitClearHistBtn');
+  const histBtn = $('recitClearHistBtn');
   if (histBtn) histBtn.addEventListener('click', () => { STATE.recitHistory=[]; renderRecit(main); });
 }
 
@@ -960,76 +1081,51 @@ function doRecitCheck(main) {
 }
 
 function bindRecitCirculaire(main, type) {
-  const data = type === 'velours' ? CIRC_VELOURS : CIRC_SATIN;
-
-  const checkBtn = document.getElementById('circCheckBtn');
+  const checkBtn = $('circCheckBtn');
   if (checkBtn) checkBtn.addEventListener('click', () => {
-    const ta = document.getElementById('circInput');
+    const ta = $('circInput');
     const input = (ta ? ta.value : '').trim();
     STATE['circInput_'+type] = input;
     if (!input) return;
 
-    // Find matching circulaire question
-    const u = normalize(input);
-    let found = null;
-    let foundFiliere = null;
-
-    // Check against all circulaire questions
-    const circQuestions = ALL_QUESTIONS.filter(q =>
-      q.cat === 'Circulaire velours' && type === 'velours' ||
-      q.cat === 'Circulaire satin' && type === 'satin'
-    );
-
-    for (const q of circQuestions) {
-      const a = normalize(q.a);
-      // Extract filière from answer "... pour Filière"
-      const pourIdx = q.a.toLowerCase().indexOf(' pour ');
-      if (pourIdx === -1) continue;
-      const filiere = q.a.slice(pourIdx + 6).trim();
-
-      // Check if already done
-      const done = STATE['recitDone_'+type] || {};
-      if (done[filiere]) continue;
-
-      // Check answer quality
-      const score = autoCheck(input, q.a);
-      if (score === 'correct' || score === 'partial') {
-        found = q;
-        foundFiliere = filiere;
-        break;
-      }
-    }
-
-    if (found && foundFiliere) {
+    const res = checkCirc(input, type);
+    if (res.ok) {
       if (!STATE['recitDone_'+type]) STATE['recitDone_'+type] = {};
-      STATE['recitDone_'+type][foundFiliere] = true;
-      STATE['circResult_'+type] = { ok: true, expected: null };
-      STATE['circInput_'+type] = '';
-    } else {
-      // Find closest match to hint
-      let closest = null;
-      for (const q of circQuestions) {
-        const pourIdx = q.a.toLowerCase().indexOf(' pour ');
-        if (pourIdx === -1) continue;
-        const filiere = q.a.slice(pourIdx + 6).trim();
-        const done = STATE['recitDone_'+type] || {};
-        if (done[filiere]) continue;
-        // Check if filière name mentioned
-        if (u.includes(normalize(filiere))) {
-          closest = q.a;
-          break;
-        }
+      if (STATE['recitDone_'+type][res.filiere]) {
+        STATE['circResult_'+type] = { ok:false, msg:'Déjà récité : ' + res.filiere };
+      } else {
+        STATE['recitDone_'+type][res.filiere] = true;
+        STATE['circResult_'+type] = { ok:true, filiere: res.filiere };
+        STATE['circInput_'+type] = '';
       }
-      STATE['circResult_'+type] = {
-        ok: false,
-        msg: 'Pas reconnu comme circulaire valide',
-        expected: closest
-      };
+    } else {
+      let msg;
+      if (res.reason === 'filiere_inconnue') msg = 'Filière non reconnue';
+      else if (res.reason === 'incomplet') {
+        const parts = [];
+        if (!res.insigneOk) parts.push('insigne');
+        if (!res.matCoulOk) parts.push('matière/couleur');
+        msg = 'Incomplet pour « ' + res.filiere + ' » : vérifie ' + parts.join(' et ');
+      } else msg = 'Pas reconnu';
+      STATE['circResult_'+type] = { ok:false, msg };
     }
     renderRecit(main);
   });
 
-  const resetBtn = document.getElementById('circResetBtn');
+  const corrBtn = $('circCorrectionBtn');
+  if (corrBtn) corrBtn.addEventListener('click', () => {
+    STATE.showCorrection = (STATE.showCorrection === type) ? null : type;
+    renderRecit(main);
+  });
+
+  const closeCorr = $('closeCorrection');
+  if (closeCorr) closeCorr.addEventListener('click', () => { STATE.showCorrection = null; renderRecit(main); });
+  const overlay = $('correctionOverlay');
+  if (overlay) overlay.addEventListener('click', e => {
+    if (e.target === overlay) { STATE.showCorrection = null; renderRecit(main); }
+  });
+
+  const resetBtn = $('circResetBtn');
   if (resetBtn) resetBtn.addEventListener('click', () => {
     if (confirm('Remettre la progression à zéro ?')) {
       STATE['recitDone_'+type] = {};
@@ -1039,19 +1135,14 @@ function bindRecitCirculaire(main, type) {
     }
   });
 
-  const ta = document.getElementById('circInput');
+  const ta = $('circInput');
   if (ta) {
     ta.addEventListener('input', e => { STATE['circInput_'+type] = e.target.value; });
     ta.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        document.getElementById('circCheckBtn') && document.getElementById('circCheckBtn').click();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('circCheckBtn') && $('circCheckBtn').click(); }
     });
   }
 }
-
-
 // ── ACCOUNT ───────────────────────────────────────────────────────────────────
 function renderAccount(main) {
   const loggedIn = AUTH && AUTH.isLoggedIn();
