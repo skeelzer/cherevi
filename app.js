@@ -265,7 +265,7 @@ const CAT_COLORS = {
   'Insignes GM':'#5a4a00','Insignes régionaux':'#004a2a','Velours/Rubans':'#2a2a5a',
   'Types de faluche':'#4a2a00','Potager':'#1a4a3a','GM & GC':'#5a2a00',
   'Baptême':'#4a001a','Parrains':'#00304a','Honoris Causa':'#3a3000',
-  'Grands Singes':'#2a2a2a','Archivistes':'#003a4a',
+  'Grands Singes':'#2a2a2a','Archivistes':'#003a4a','Insignes anciens':'#3a1a3a',
 };
 
 // ── DOM helpers ───────────────────────────────────────────────────────────────
