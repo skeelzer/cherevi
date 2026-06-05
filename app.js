@@ -1351,11 +1351,16 @@ function renderAccount(main) {
   await openDB();
   if (typeof AUTH !== 'undefined') {
     await AUTH.load();
-    if (AUTH.isLoggedIn()) {
-      const user = await SB.getUser().catch(() => null);
-      if (!user || user.error) {
+    // On ne vérifie la validité de la session auprès du serveur QUE si on a du réseau.
+    // Hors ligne, on conserve la session locale telle quelle : l'utilisateur reste
+    // connecté et la revalidation/refresh se fera automatiquement au retour en ligne.
+    if (AUTH.isLoggedIn() && navigator.onLine) {
+      const user = await SB.getUser().catch(() => undefined);
+      // user === null  -> le serveur a répondu mais le token est invalide  -> on tente un refresh
+      // user === undefined -> le fetch a échoué (réseau capricieux) -> on NE déconnecte PAS
+      if (user === null || (user && user.error)) {
         const refreshed = await AUTH.refresh();
-        if (!refreshed) { AUTH.user=null; AUTH.token=null; AUTH.save(); }
+        if (!refreshed) { AUTH.user = null; AUTH.token = null; AUTH.refreshToken = null; AUTH.save(); }
       }
     }
   }
@@ -1367,6 +1372,7 @@ function renderAccount(main) {
     SYNC.startAutoSync();
     if (AUTH.isLoggedIn() && navigator.onLine) {
       SYNC_STATE.status = 'syncing'; renderSyncIndicator();
+      // Au cas où le token aurait expiré, on le rafraîchit avant de tirer les données
       await SYNC.pull();
       STATE.qstats = await getAllQStats();
       render();

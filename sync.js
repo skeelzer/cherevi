@@ -27,7 +27,9 @@ const SB = (() => {
     signUp:  (email, pass) => auth('signup',  { email, password: pass }),
     signIn:  (email, pass) => auth('token?grant_type=password', { email, password: pass }),
     signOut: () => fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST', headers: headers() }),
-    getUser: () => fetch(SUPABASE_URL + '/auth/v1/user', { headers: headers() }).then(r => r.ok ? r.json() : null),
+    getUser: () => fetch(SUPABASE_URL + '/auth/v1/user', { headers: headers() })
+      .then(r => r.ok ? r.json() : null)   // réponse serveur mais non-ok => null (token invalide)
+      .catch(() => undefined),             // fetch impossible (hors ligne) => undefined
     refreshToken: (refresh_token) => auth('token?grant_type=refresh_token', { refresh_token }),
 
     // Upsert entire user data blob (one row per user in user_data table)
@@ -241,11 +243,16 @@ const SYNC = {
     }, 5 * 60 * 1000);
 
     // Sync on coming back online
-    window.addEventListener('online', () => {
+    window.addEventListener('online', async () => {
       if (AUTH.isLoggedIn()) {
         SYNC_STATE.status = 'syncing';
         renderSyncIndicator();
-        this.push();
+        // Le token a pu expirer pendant la coupure réseau : on le rafraîchit d'abord.
+        const user = await SB.getUser();
+        if (user === null || (user && user.error)) {
+          await AUTH.refresh();  // si ça échoue, on garde quand même la session locale
+        }
+        await this.push();
       }
     });
 
