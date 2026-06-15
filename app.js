@@ -307,6 +307,19 @@ function render() {
   else if (STATE.screen === 'songs') renderSongs(main);
   else if (STATE.screen === 'recit') renderRecit(main);
   else if (STATE.screen === 'account') renderAccount(main);
+  else if (STATE.screen === 'contact') renderContact(main);
+
+  // Footer (auteur + contact), masqué pendant le quiz
+  if (STATE.screen !== 'quiz') {
+    const footer = document.createElement('div');
+    footer.className = 'app-footer';
+    footer.innerHTML =
+      '<span class="footer-author">Créé par Lucas Jacquot</span>' +
+      '<button class="footer-contact-btn" id="footerContactBtn">✉️ Contact / Feedback</button>';
+    app.appendChild(footer);
+    const fc = document.getElementById('footerContactBtn');
+    if (fc) fc.addEventListener('click', () => { STATE.screen = 'contact'; render(); });
+  }
 }
 
 // ── HOME ──────────────────────────────────────────────────────────────────────
@@ -1344,6 +1357,82 @@ function renderAccount(main) {
       .filter(Boolean)
       .forEach(inp => inp.addEventListener('keydown', e => { if (e.key==='Enter') doAuth(); }));
   }
+}
+
+// ── CONTACT / FEEDBACK ────────────────────────────────────────────────────────
+function renderContact(main) {
+  let html = '<div class="account-wrap contact-wrap">';
+  html += '<button class="btn-ghost contact-back" id="contactBack">← Retour</button>';
+  html += '<div class="account-avatar">✉️</div>';
+  html += '<div class="account-title">Contact / Feedback</div>';
+  html += '<div class="account-subtitle">Une remarque, un bug, une question, une filière manquante ? Écris-moi, ça aide à améliorer l\'appli.</div>';
+  html += '<div class="auth-form contact-form">';
+  html += '<label class="contact-label">Prénom <span class="contact-req">*</span></label>';
+  html += '<input class="auth-input" id="ctPrenom" type="text" placeholder="Ton prénom" autocomplete="given-name"/>';
+  html += '<label class="contact-label">Nom de famille</label>';
+  html += '<input class="auth-input" id="ctNom" type="text" placeholder="(optionnel)" autocomplete="family-name"/>';
+  html += '<label class="contact-label">Surnom de faluche</label>';
+  html += '<input class="auth-input" id="ctSurnom" type="text" placeholder="(optionnel)"/>';
+  html += '<label class="contact-label">Filière</label>';
+  html += '<input class="auth-input" id="ctFiliere" type="text" placeholder="(optionnel)"/>';
+  html += '<label class="contact-label">Contact (mail, tel, réseau…)</label>';
+  html += '<input class="auth-input" id="ctContact" type="text" placeholder="(optionnel, si tu veux une réponse)"/>';
+  html += '<label class="contact-label">Raison du contact <span class="contact-req">*</span></label>';
+  html += '<textarea class="auth-input contact-textarea" id="ctRaison" rows="5" placeholder="Décris ta remarque, ton bug, ta suggestion…"></textarea>';
+  html += '<div class="auth-error" id="contactError"></div>';
+  html += '<button class="btn-primary" id="contactSendBtn">✉️ Envoyer</button>';
+  html += '<div class="account-offline-note">Le bouton ouvre ton application mail avec le message pré-rempli. Il ne te reste qu\'à appuyer sur « Envoyer ».</div>';
+  html += '</div>';
+  html += '</div>';
+  main.innerHTML = html;
+
+  $('contactBack').addEventListener('click', () => { STATE.screen = 'home'; render(); });
+
+  $('contactSendBtn').addEventListener('click', () => {
+    const prenom  = $('ctPrenom').value.trim();
+    const nom     = $('ctNom').value.trim();
+    const surnom  = $('ctSurnom').value.trim();
+    const filiere = $('ctFiliere').value.trim();
+    const contact = $('ctContact').value.trim();
+    const raison  = $('ctRaison').value.trim();
+    const errEl = $('contactError');
+    errEl.textContent = '';
+
+    if (!prenom) { errEl.textContent = 'Le prénom est obligatoire.'; $('ctPrenom').focus(); return; }
+    if (!raison) { errEl.textContent = 'La raison du contact est obligatoire.'; $('ctRaison').focus(); return; }
+
+    // Date et heure d'envoi
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+
+    // Corps du mail
+    const lines = [
+      'Date et heure d\'envoi : ' + dateStr + ' à ' + timeStr,
+      '',
+      'Prénom : ' + prenom,
+      'Nom de famille : ' + (nom || '(non renseigné)'),
+      'Surnom de faluche : ' + (surnom || '(non renseigné)'),
+      'Filière : ' + (filiere || '(non renseignée)'),
+      'Contact : ' + (contact || '(non renseigné)'),
+      '',
+      'Raison du contact :',
+      raison,
+    ];
+    const body = lines.join('\n');
+    const subject = 'report Cherevi';
+    const mailto = 'mailto:lucas.jacquot@estaca.eu'
+      + '?subject=' + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body);
+
+    // Ouvre l'application mail
+    window.location.href = mailto;
+
+    // Confirmation visuelle
+    const btn = $('contactSendBtn');
+    btn.textContent = '✅ Mail ouvert — appuie sur Envoyer';
+    setTimeout(() => { if ($('contactSendBtn')) $('contactSendBtn').textContent = '✉️ Envoyer'; }, 4000);
+  });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
