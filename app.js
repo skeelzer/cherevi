@@ -314,7 +314,7 @@ function render() {
     const footer = document.createElement('div');
     footer.className = 'app-footer';
     footer.innerHTML =
-      '<span class="footer-author">Créé par Lucas Jacquot</span>' +
+      '<span class="footer-author">Créé par VI VII, alias WarBavRailer, alias j'avoueee, IPP</span>' +
       '<button class="footer-contact-btn" id="footerContactBtn">✉️ Contact / Feedback</button>';
     app.appendChild(footer);
     const fc = document.getElementById('footerContactBtn');
