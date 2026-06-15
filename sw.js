@@ -1,5 +1,5 @@
 // ── SERVICE WORKER — Cache-first strategy for full offline support ─────────────
-const CACHE = 'faluche-v31';
+const CACHE = 'faluche-v32';
 
 // Fichiers essentiels au fonctionnement hors ligne (tous présents à la racine)
 const FILES = [
