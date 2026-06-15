@@ -1420,7 +1420,7 @@ function renderContact(main) {
       raison,
     ];
     const body = lines.join('\n');
-    const subject = 'report Cherevi';
+    const subject = 'Report Cherevi';
     const mailto = 'mailto:lucas.jacquot@estaca.eu'
       + '?subject=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(body);
